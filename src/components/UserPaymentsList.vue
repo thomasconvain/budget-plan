@@ -1,12 +1,12 @@
 <template>
-  <div>
+  <div v-if="user">
     <h2>Registrar Pago</h2>
     <input v-model="amount" type="number" placeholder="Ingresa el monto" />
     <input v-model="category" type="text" placeholder="Ingresa la categoría" />
     <button @click="handleSavePayment">Guardar Pago</button>
 
     <h2>Tus Pagos</h2>
-    <table v-if="payments.length > 0 && user">
+    <table v-if="payments.length > 0">
       <thead>
         <tr>
           <th>Monto</th>
