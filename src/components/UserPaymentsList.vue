@@ -4,9 +4,11 @@
     <input v-model="amount" type="number" placeholder="Ingresa el monto" />
     <input v-model="category" type="text" placeholder="Ingresa la categoría" />
     <button @click="handleSavePayment">Guardar Pago</button>
-
     <h2>Tus Pagos</h2>
-    <table v-if="payments.length > 0">
+    <div v-if="isLoading">
+      <TableSkeleton />
+    </div>
+    <table v-if="payments.length > 0 && !isLoading">
       <thead>
         <tr>
           <th>Monto</th>
@@ -20,18 +22,23 @@
         </tr>
       </tbody>
     </table>
-    <p v-else>No tienes pagos registrados.</p>
+    <p v-if="payments.length === 0 && !isLoading">No tienes pagos registrados.</p>
   </div>
 </template>
 
 <script>
+import TableSkeleton from './TableSkeleton.vue'
 import { getFirestore, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { mapGetters } from 'vuex';
 
 export default {
+  components: {
+    TableSkeleton
+  },
   data() {
     return {
+      isLoading: false,
       payments: [],
       amount: '',
       category: '',
@@ -42,6 +49,7 @@ export default {
   },
   methods: {
     async fetchPayments(user) {
+      this.isLoading = true;
       const db = getFirestore();
       if (user) {
         const q = query(collection(db, 'payments'), where('userId', '==', user.uid));
@@ -52,6 +60,7 @@ export default {
         });
         this.payments = paymentsData;
       }
+      this.isLoading = false;
     },
     async handleSavePayment() {
       if (this.amount && this.category) {
