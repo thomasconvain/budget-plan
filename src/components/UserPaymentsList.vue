@@ -1,96 +1,116 @@
 <template>
-  <div v-if="user">
+  <div>
     <h2>Registrar Pago</h2>
     <input v-model="amount" type="number" placeholder="Ingresa el monto" />
     <input v-model="category" type="text" placeholder="Ingresa la categoría" />
+
+    <select v-model="selectedGoalId">
+      <option disabled value="">Selecciona un Goal</option>
+      <option v-for="goal in goals" :key="goal.id" :value="goal.id">
+        {{ goal.title }}
+      </option>
+    </select>
+
     <button @click="handleSavePayment">Guardar Pago</button>
-    <h2>Tus Pagos</h2>
-    <div v-if="isLoading">
-      <TableSkeleton />
-    </div>
-    <table v-if="payments.length > 0 && !isLoading">
+
+    <h2>Todos tus Pagos</h2>
+    <table v-if="payments.length > 0">
       <thead>
         <tr>
           <th>Monto</th>
           <th>Categoría</th>
+          <th>Goal</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="payment in payments" :key="payment.id">
           <td>{{ payment.amount }}</td>
           <td>{{ payment.category }}</td>
+          <td>{{ getGoalTitle(payment.goalId) }}</td>
         </tr>
       </tbody>
     </table>
-    <p v-if="payments.length === 0 && !isLoading">No tienes pagos registrados.</p>
+    <p v-else>No tienes pagos registrados.</p>
   </div>
 </template>
 
 <script>
-import TableSkeleton from './TableSkeleton.vue'
+import { ref, onMounted } from 'vue';
 import { getFirestore, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { mapGetters } from 'vuex';
 
 export default {
-  components: {
-    TableSkeleton
-  },
-  data() {
-    return {
-      isLoading: false,
-      payments: [],
-      amount: '',
-      category: '',
+  setup() {
+    const payments = ref([]);
+    const amount = ref('');
+    const category = ref('');
+    const goals = ref([]);
+    const selectedGoalId = ref('');
+
+    const auth = getAuth();
+    const db = getFirestore();
+
+    const fetchGoals = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const q = query(collection(db, 'goals'), where('userId', '==', user.uid));
+        const querySnapshot = await getDocs(q);
+        goals.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      }
     };
-  },
-  computed: {
-    ...mapGetters(['user']),
-  },
-  methods: {
-    async fetchPayments(user) {
-      this.isLoading = true;
-      const db = getFirestore();
+
+    const fetchPayments = async () => {
+      const user = auth.currentUser;
       if (user) {
         const q = query(collection(db, 'payments'), where('userId', '==', user.uid));
         const querySnapshot = await getDocs(q);
-        const paymentsData = [];
-        querySnapshot.forEach((doc) => {
-          paymentsData.push({ id: doc.id, ...doc.data() });
+        payments.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      }
+    };
+
+    const handleSavePayment = async () => {
+      const user = auth.currentUser;
+      if (user && amount.value && category.value && selectedGoalId.value) {
+        await addDoc(collection(db, 'payments'), {
+          userId: user.uid,
+          amount: parseFloat(amount.value),
+          category: category.value,
+          goalId: selectedGoalId.value,
         });
-        this.payments = paymentsData;
+
+        // Actualizar la lista de pagos después de agregar uno nuevo
+        fetchPayments();
+
+        // Limpiar los campos
+        amount.value = '';
+        category.value = '';
+        selectedGoalId.value = '';
       }
-      this.isLoading = false;
-    },
-    async handleSavePayment() {
-      if (this.amount && this.category) {
-        const auth = getAuth();
-        const db = getFirestore();
-        const user = auth.currentUser;
+    };
+
+    const getGoalTitle = (goalId) => {
+      const goal = goals.value.find(g => g.id === goalId);
+      return goal ? goal.title : 'Sin objetivo';
+    };
+
+    onMounted(() => {
+      onAuthStateChanged(auth, (user) => {
         if (user) {
-          await addDoc(collection(db, 'payments'), {
-            userId: user.uid,
-            amount: parseFloat(this.amount),
-            category: this.category,
-          });
-
-          // Actualizar la lista de pagos después de agregar uno nuevo
-          await this.fetchPayments(user);
-
-          // Limpiar los campos
-          this.amount = '';
-          this.category = '';
+          fetchGoals();
+          fetchPayments();
         }
-      }
-    },
-  },
-  mounted() {
-    const auth = getAuth();
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        this.fetchPayments(user);
-      }
+      });
     });
+
+    return {
+      payments,
+      amount,
+      category,
+      goals,
+      selectedGoalId,
+      handleSavePayment,
+      getGoalTitle,
+    };
   },
 };
 </script>

@@ -1,7 +1,8 @@
-import { createApp } from 'vue'
-import App from './App.vue'
-import './assets/css/tailwind.css'
+import { createApp } from 'vue';
+import App from './App.vue';
+import './assets/css/tailwind.css';
 import store from './store';
+import router from './router'; // Importa el router que configuraste
 import { auth } from './firebase'; // Importa Firebase config
 import { onAuthStateChanged } from 'firebase/auth';
 
@@ -16,8 +17,14 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-// Monta la aplicación
-app.use(store); // Solo si estás usando Vuex
+// Usa Vuex
+app.use(store); 
+
+// Usa Vue Router
+app.use(router); 
+
 // Cargar el usuario y la dirección al iniciar la aplicación
 store.dispatch('loadUser');
+
+// Monta la aplicación
 app.mount('#app');
