@@ -18,4 +18,6 @@ onAuthStateChanged(auth, (user) => {
 
 // Monta la aplicación
 app.use(store); // Solo si estás usando Vuex
+// Cargar el usuario y la dirección al iniciar la aplicación
+store.dispatch('loadUser');
 app.mount('#app');
