@@ -10,6 +10,11 @@
     <p>Válido Desde: {{ goal.validFrom }}</p>
     <p>Válido Hasta: {{ goal.validUntil }}</p>
 
+    <UserPaymentsList
+      :selectedGoalId="route.params.goalId" 
+      @paymentSaved="onPaymentSaved" />
+
+
     <h3>Pagos Asociados</h3>
     <table v-if="payments.length > 0">
       <thead>
@@ -31,43 +36,46 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, onMounted } from 'vue';
 import { getFirestore, doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { useRoute } from 'vue-router';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import UserPaymentsList from '../components/UserPaymentsList.vue';
 
-export default {
-  setup() {
-    const goal = ref(null);
-    const payments = ref([]);
-    const isLoading = ref(true); // Estado de carga
-    const route = useRoute();
-    const db = getFirestore();
-    const auth = getAuth();
+const goal = ref(null);
+const payments = ref([]);
+const isLoading = ref(true); // Estado de carga
+const route = useRoute();
+const db = getFirestore();
+const auth = getAuth();
 
-    const fetchGoalDetails = async (goalId) => {
-      try {
-        const goalDocRef = doc(db, 'goals', goalId);
-        const goalDoc = await getDoc(goalDocRef);
-        if (goalDoc.exists()) {
-          goal.value = { id: goalDoc.id, ...goalDoc.data() };
-        } else {
-          throw new Error('Goal not found');
-        }
-      } catch (error) {
-        console.error('Error fetching goal details:', error);
-      }
-    };
+const fetchGoalDetails = async (goalId) => {
+  try {
+    const goalDocRef = doc(db, 'goals', goalId);
+    const goalDoc = await getDoc(goalDocRef);
+    if (goalDoc.exists()) {
+      goal.value = { id: goalDoc.id, ...goalDoc.data() };
+    } else {
+      throw new Error('Goal not found');
+    }
+  } catch (error) {
+    console.error('Error fetching goal details:', error);
+  }
+};
 
-    const fetchPaymentsForGoal = async (goalId) => {
-  console.log('goalId:', goalId); // Verifica el valor de goalId antes de la consulta
+const onPaymentSaved = () => {
+  console.log('HOLLAAAAAAA');
+  fetchPaymentsForGoal();
+};
+
+const fetchPaymentsForGoal = async () => {
   const user = auth.currentUser;
   try {
-    const q = query(collection(db, 'payments'), where('goalId', '==', goalId), where('userId', '==', user.uid));
+    const q = query(collection(db, 'payments'), where('goalId', '==', route.params.goalId), where('userId', '==', user.uid));
     console.log(q);
     const querySnapshot = await getDocs(q);
-    console.log(querySnapshot)
+    console.log(querySnapshot);
     payments.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     console.log('Payments fetched:', payments.value); // Verifica los resultados obtenidos
   } catch (error) {
@@ -75,30 +83,22 @@ export default {
   }
 };
 
-
-    onMounted(async () => {
-      const goalId = route.params.goalId;
-      onAuthStateChanged(auth, async (user) => {
-        if (user) {
-          try {
-            await fetchGoalDetails(goalId);
-            await fetchPaymentsForGoal(goalId);
-          } catch (error) {
-            console.error('Error during onMounted:', error);
-          } finally {
-            isLoading.value = false; // Desactivar estado de carga cuando todo esté cargado
-          }
-        } else {
-          console.error('User is not authenticated');
-        }
-      });
-    });
-
-    return {
-      goal,
-      payments,
-      isLoading,
-    };
-  },
-};
+onMounted(async () => {
+  const goalId = route.params.goalId;
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      try {
+        await fetchGoalDetails(goalId);
+        await fetchPaymentsForGoal(goalId);
+      } catch (error) {
+        console.error('Error during onMounted:', error);
+      } finally {
+        isLoading.value = false; // Desactivar estado de carga cuando todo esté cargado
+      }
+    } else {
+      console.error('User is not authenticated');
+    }
+  });
+});
 </script>
+
