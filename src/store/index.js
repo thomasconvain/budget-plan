@@ -1,7 +1,7 @@
 import { createStore } from 'vuex';
-import { auth, db } from '@/firebase';
-import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
+import { auth, db } from '@/firebase';
 
 const store = createStore({
   state: {
@@ -21,6 +21,22 @@ const store = createStore({
     },
   },
   actions: {
+    async register({ commit }, { email, password, name }) {
+      try {
+        const result = await createUserWithEmailAndPassword(auth, email, password);
+        const user = result.user;
+        commit('setUser', user);
+
+        const userDocRef = doc(db, 'users', user.uid);
+        await setDoc(userDocRef, { userId: user.uid, email, name, address: '' });
+
+        commit('setAddress', ''); 
+        return true;
+      } catch (error) {
+        console.error('Error durante el registro:', error);
+        throw error;
+      }
+    },
     async signIn({ commit }) {
       try {
         const provider = new GoogleAuthProvider();
@@ -28,19 +44,38 @@ const store = createStore({
         const user = result.user;
         commit('setUser', user);
 
-        // Recuperar la dirección del usuario desde Firestore
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
           commit('setAddress', userDoc.data().address);
         } else {
-          // Si no existe, crea el documento con un campo de dirección vacío
           await setDoc(userDocRef, { userId: user.uid, address: '' });
-          commit('setAddress', ''); // Inicialmente vacío
+          commit('setAddress', '');
         }
       } catch (error) {
         console.error('Error durante el inicio de sesión:', error);
+      }
+    },
+    async signInWithEmail({ commit }, { email, password }) {
+      try {
+        const result = await signInWithEmailAndPassword(auth, email, password);
+        const user = result.user;
+        commit('setUser', user);
+  
+        // Recuperar la dirección del usuario desde Firestore
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+  
+        if (userDoc.exists()) {
+          commit('setAddress', userDoc.data().address);
+        } else {
+          await setDoc(userDocRef, { userId: user.uid, address: '' });
+          commit('setAddress', '');
+        }
+      } catch (error) {
+        console.error('Error durante el inicio de sesión con correo electrónico:', error);
+        throw error; // Propagar el error para que el componente lo maneje
       }
     },
     async logout({ commit }) {
@@ -77,16 +112,14 @@ const store = createStore({
         if (user) {
           commit('setUser', user);
 
-          // Cargar la dirección desde Firestore
           const userDocRef = doc(db, 'users', user.uid);
           const userDoc = await getDoc(userDocRef);
 
           if (userDoc.exists()) {
             commit('setAddress', userDoc.data().address);
           } else {
-            // Si no existe, crea el documento con un campo de dirección vacío
             await setDoc(userDocRef, { userId: user.uid, address: '' });
-            commit('setAddress', ''); // Inicialmente vacío
+            commit('setAddress', '');
           }
         }
       });
