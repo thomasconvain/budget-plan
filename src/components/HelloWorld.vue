@@ -1,26 +1,26 @@
 <template>
   <div>
-    <div class="flex items-center justify-center min-h-screen bg-gray-100">
-    <div class="w-full max-w-md p-8 space-y-6 bg-white shadow-lg rounded-lg">
+    <div class="flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-md p-8 space-y-6 bg-white shadow-lg rounded-xl">
       <div class="flex justify-center">
-        <svg class="w-10 h-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <!-- <svg class="w-10 h-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 .552-.895 1-2 1s-2-.448-2-1 .895-1 2-1 2 .448 2 1zm0 4c0 .552-.895 1-2 1s-2-.448-2-1 .895-1 2-1 2 .448 2 1z"/>
-        </svg>
+        </svg> -->
       </div>
-      <h2 v-if="!isSignup" class="text-2xl font-bold text-center text-gray-900">Hola de nuevo 👋</h2>
+      <h2 v-if="!isSignup" class="text-2xl font-bold text-center text-gray-900">Hola 👋</h2>
       <h2 v-else class="text-2xl font-bold text-center text-gray-900">Crea una cuenta</h2>
       <form v-if="!isSignup" class="mt-8 space-y-6" @submit.prevent="loginWithEmail">
-        <div class="rounded-md shadow-sm">
+        <div class="rounded-xl shadow-sm">
           <div>
             <label for="email-address" class="sr-only">Email</label>
             <input v-model="email" id="email-address" name="email" type="email" autocomplete="email" required
-                   class="block w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                    placeholder="Email address">
           </div>
-          <div class="mt-1">
+          <div class="mt-4">
             <label for="password" class="sr-only">Clave</label>
             <input v-model="password" id="password" name="password" type="password" autocomplete="current-password" required
-                   class="block w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                    placeholder="Password">
             <p v-if="error">{{ error }}</p>
           </div>
@@ -28,12 +28,12 @@
 
         <div>
           <button type="submit"
-                  class="relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md group hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                  class="relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg group hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
             Entrar
           </button>
           <button
             @click="isSignup = true"
-            class="relative flex justify-center w-full mt-1 px-4 py-2 text-sm font-medium text-indigo-600 bg-transparent rounded-md group hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            class="relative flex justify-center w-full mt-1 px-4 py-2 text-sm font-medium text-indigo-600 bg-transparent rounded-lg group hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
             ¿No tienes una cuenta?
           </button>
         </div>
@@ -47,7 +47,7 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 gap-3">
+        <div class="flex justify-center">
           <div>
             <button @click="signIn" class="gsi-material-button" style="width:300px">
               <div class="gsi-material-button-state"></div>
@@ -71,7 +71,7 @@
       <div v-else>
         <SignUp />
         <button @click="isSignup = false"
-                  class="relative flex justify-center w-full mt-1 px-4 py-2 text-sm font-medium text-indigo-600 bg-transparent rounded-md group hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                  class="relative flex justify-center w-full mt-1 px-4 py-2 text-sm font-medium text-indigo-600 bg-transparent rounded-lg group hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
             Volver
           </button>
       </div>

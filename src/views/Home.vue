@@ -3,8 +3,7 @@
     <HelloWorld />
   </div>
   <div v-if="user">
-    <NavBar />
-     <!-- <UserDirecction /> -->
+    <!-- <UserDirecction /> -->
     <UserPaymentsList />
     <CreateGoals />
   </div>
@@ -12,7 +11,6 @@
 
 <script>
 import HelloWorld from '../components/HelloWorld.vue'
-import NavBar from '../components/NavBar.vue'
 // import UserDirecction from '../components/UserDirection.vue'
 import UserPaymentsList from '../components/UserPaymentsList.vue'
 import CreateGoals from '../components/CreateGoals.vue'
@@ -22,7 +20,6 @@ export default {
   name: 'App',
   components: {
     HelloWorld,
-    NavBar,
     // UserDirecction,
     UserPaymentsList,
     CreateGoals

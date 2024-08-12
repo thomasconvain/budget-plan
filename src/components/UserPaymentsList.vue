@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2>Registrar Pago</h2>
+    <!-- <h2>Registrar Pago</h2>
     <input v-model="amount" type="number" placeholder="Ingresa el monto" />
     <input v-model="category" type="text" placeholder="Ingresa la categoría" />
 
@@ -30,7 +30,7 @@
         </tr>
       </tbody>
     </table>
-    <p v-else>No tienes pagos registrados.</p>
+    <p v-else>No tienes pagos registrados.</p> -->
   </div>
 </template>
 
