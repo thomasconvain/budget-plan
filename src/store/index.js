@@ -116,22 +116,27 @@ const store = createStore({
       }
     },
     async loadUser({ commit }) {
-      commit('setLoading', true);
-      onAuthStateChanged(auth, async (user) => {
-        if (user) {
-          commit('setUser', user);
+      commit('setLoading', true); // Inicia el proceso de carga
+      return new Promise((resolve) => {
+        onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            commit('setUser', user);
 
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDoc = await getDoc(userDocRef);
+            const userDocRef = doc(db, 'users', user.uid);
+            const userDoc = await getDoc(userDocRef);
 
-          if (userDoc.exists()) {
-            commit('setAddress', userDoc.data().address);
+            if (userDoc.exists()) {
+              commit('setAddress', userDoc.data().address);
+            } else {
+              await setDoc(userDocRef, { userId: user.uid, address: '' });
+              commit('setAddress', '');
+            }
           } else {
-            await setDoc(userDocRef, { userId: user.uid, address: '' });
-            commit('setAddress', '');
+            commit('clearUser');
           }
-        }
-        commit('setLoading', false);
+          commit('setLoading', false); // Finaliza el proceso de carga
+          resolve();
+        });
       });
     },
   },

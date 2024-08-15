@@ -28,36 +28,27 @@ const router = createRouter({
   routes,
 });
 
-// Helper para esperar a que el estado del usuario esté disponible
-function getUserState(store) {
-  return new Promise((resolve) => {
-    const unsubscribe = store.watch(
-      (state, getters) => getters.user,
-      (user) => {
-        if (user !== null) {
-          resolve(user);
-          unsubscribe();
-        }
-      }
-    );
-    // También verifica el estado actual
-    if (store.getters.user !== null) {
-      resolve(store.getters.user);
-      unsubscribe();
-    }
-  });
-}
-
 router.beforeEach(async (to, from, next) => {
   const store = useStore();
+  // Agregamos logs para ver cómo se comporta
+  console.log('Guard de ruta ejecutado');
 
-  const user = await getUserState(store);
+  if (store.state.loading) {
+    console.log('Esperando a que el usuario se cargue...');
+    await store.dispatch('loadUser');
+  }
+
+  const user = store.getters.user;
+  console.log('Estado del usuario:', user);
 
   if (user && to.path === '/') {
-    // Si el usuario está autenticado y trata de acceder a la ruta '/', redirige a '/dashboard'
+    console.log('Usuario autenticado, redirigiendo a dashboard');
     next('/dashboard');
+  } else if (!user && to.meta.requiresAuth) {
+    console.log('Usuario no autenticado, redirigiendo a home');
+    next('/');
   } else {
-    // Si no, permite la navegación normal
+    console.log('Navegación permitida');
     next();
   }
 });
