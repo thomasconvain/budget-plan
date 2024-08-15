@@ -1,5 +1,8 @@
 <template>
-  <div class="bg-gray-50 min-h-screen">
+  <div v-if="loading">
+    <p>Cargando...</p> <!-- Aquí podrías usar un spinner o algo más estilizado -->
+  </div>
+  <div v-else class="bg-gray-50 min-h-screen">
     <div v-if="user">
       <NavBar />
     </div>
@@ -19,6 +22,7 @@ const store = useStore();
 
 // Acceder al getter 'user' del store
 const user = computed(() => store.getters.user);
+const loading = computed(() => store.getters.loading);
 </script>
 
 <style>

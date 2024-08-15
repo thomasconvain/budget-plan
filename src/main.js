@@ -8,6 +8,9 @@ import { onAuthStateChanged } from 'firebase/auth';
 
 const app = createApp(App);
 
+// Cargar el usuario y la dirección al iniciar la aplicación
+store.dispatch('loadUser');
+
 // Observador para detectar cambios de autenticación
 onAuthStateChanged(auth, (user) => {
   if (user) {
@@ -22,9 +25,6 @@ app.use(store);
 
 // Usa Vue Router
 app.use(router); 
-
-// Cargar el usuario y la dirección al iniciar la aplicación
-store.dispatch('loadUser');
 
 // Monta la aplicación
 app.mount('#app');

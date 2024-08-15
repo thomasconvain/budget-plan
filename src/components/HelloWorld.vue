@@ -46,8 +46,8 @@
             <span class="px-2 text-gray-500 bg-white">O</span>
           </div>
         </div>
-
-        <div class="flex justify-center">
+      </form>
+      <div class="flex justify-center">
           <div>
             <button @click="signIn" class="gsi-material-button" style="width:300px">
               <div class="gsi-material-button-state"></div>
@@ -67,14 +67,13 @@
             </button>
           </div>
         </div>
-      </form>
-      <div v-else>
-        <SignUp />
-        <button @click="isSignup = false"
-                  class="relative flex justify-center w-full mt-1 px-4 py-2 text-sm font-medium text-indigo-600 bg-transparent rounded-lg group hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-            Volver
-          </button>
-      </div>
+        <div v-if="isSignup">
+          <SignUp />
+          <button @click="isSignup = false"
+                    class="relative flex justify-center w-full mt-1 px-4 py-2 text-sm font-medium text-indigo-600 bg-transparent rounded-lg group hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              Volver
+            </button>
+        </div>
     </div>
   </div>
 

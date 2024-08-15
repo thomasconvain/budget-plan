@@ -2,11 +2,13 @@ import { createStore } from 'vuex';
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
 import { auth, db } from '@/firebase';
+import router from '@/router'; 
 
 const store = createStore({
   state: {
     user: null,
     address: null,
+    loading: true,
   },
   mutations: {
     setUser(state, user) {
@@ -19,6 +21,9 @@ const store = createStore({
     setAddress(state, address) {
       state.address = address;
     },
+    setLoading(state, isLoading) {
+      state.loading = isLoading;
+    }
   },
   actions: {
     async register({ commit }, { email, password, name }) {
@@ -53,6 +58,7 @@ const store = createStore({
           await setDoc(userDocRef, { userId: user.uid, address: '' });
           commit('setAddress', '');
         }
+        router.push('/dashboard');
       } catch (error) {
         console.error('Error durante el inicio de sesión:', error);
       }
@@ -73,6 +79,7 @@ const store = createStore({
           await setDoc(userDocRef, { userId: user.uid, address: '' });
           commit('setAddress', '');
         }
+        router.push('/dashboard');
       } catch (error) {
         console.error('Error durante el inicio de sesión con correo electrónico:', error);
         throw error; // Propagar el error para que el componente lo maneje
@@ -82,6 +89,7 @@ const store = createStore({
       try {
         await signOut(auth);
         commit('clearUser');
+        router.push('/')
       } catch (error) {
         console.error('Error durante el cierre de sesión:', error);
       }
@@ -108,6 +116,7 @@ const store = createStore({
       }
     },
     async loadUser({ commit }) {
+      commit('setLoading', true);
       onAuthStateChanged(auth, async (user) => {
         if (user) {
           commit('setUser', user);
@@ -122,12 +131,14 @@ const store = createStore({
             commit('setAddress', '');
           }
         }
+        commit('setLoading', false);
       });
     },
   },
   getters: {
     user: (state) => state.user,
     address: (state) => state.address,
+    loading: (state) => state.loading,
   },
 });
 
