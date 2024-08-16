@@ -25,7 +25,7 @@
       <div class="mx-auto max-w-7xl px-6 lg:px-8">
         <dl class="grid grid-cols-1 gap-x-8 gap-y-8 text-center lg:grid-cols-3">
           <div v-for="stat in stats" :key="stat.id" class="mx-auto flex max-w-xs flex-col gap-y-1">
-            <dt class="text-base text-sm leading-7 text-gray-500">{{ stat.name }}</dt>
+            <dt class="text-base text-sm leading-5 text-gray-500">{{ stat.name }}</dt>
             <dd class="order-first text-xl font-semibold tracking-tight text-gray-900 sm:text-3xl">${{ stat.value }}</dd>
           </div>
         </dl>
@@ -89,7 +89,7 @@ const auth = getAuth();
 const stats = computed(() => [
   { id: 1, name: 'Total de gastos durante el periodo', value: formatNumber(totalPaymentsAmount.value) || 0 },
   { id: 2, name: 'Total restante para gastar', value: formatNumber(availableTotalAmountForPeriod.value) || 0 },
-  { id: 3, name: 'Gasto diario promedio', value: formatNumber(averageAvailableAmountPerDay.value) || 0 }
+  { id: 3, name: 'Gasto diario promedio para cumplir con tu meta de ahorro', value: `${formatNumber(averageAvailableAmountPerDay.value)} /día` || 0 }
 ]);
 
 const calculateDaysRemaining = () => {

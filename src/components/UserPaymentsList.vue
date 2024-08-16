@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1 class="text-2xl font-semibold	mb-4">Ingresar nuevo pago</h1>
-    <div class="my-1 flex gap-1 flex-wrap">
+    <div class="my-1 flex gap-1 flex-wrap sm:flex-nowrap">
       <div class="relative flex w-full">
         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
         <input
