@@ -11,7 +11,7 @@
         <p class="text-sm text-gray-500">{{ goal.description }}</p>
       </div>
       <div class="text-right ml-auto">
-        <p class="text-sm text-gray-500">{{ goal.validUntil }}</p>
+        <p class="text-sm text-gray-500">{{ formatDate(goal.validUntil) }}</p>
       </div>
     </router-link>
     <button @click="handleDeleteGoal(goal.id)" class="ml-4 text-red-600 hover:text-red-800">
@@ -76,10 +76,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, writeBatch } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, writeBatch, Timestamp } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { CurrencyDollarIcon } from '@heroicons/vue/24/outline';
 import { formatNumber } from '../utils/currencyFormatters.js';
+import {formatDate} from '../utils/dateFormatter.js'
 import { computed } from 'vue';
 
 const title = ref('');
@@ -111,8 +112,8 @@ const handleSaveGoal = async () => {
       userId: user.uid,
       availableAmount: parseFloat(availableAmount.value),
       savingGoalAmount: parseFloat(savingGoalAmount.value),
-      validFrom: validFrom.value,
-      validUntil: validUntil.value,
+      validFrom: Timestamp.fromDate(new Date(validFrom.value)),
+      validUntil: Timestamp.fromDate(new Date(validUntil.value)),
     });
 
     // Actualizar la lista de goals después de agregar uno nuevo

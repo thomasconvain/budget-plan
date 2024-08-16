@@ -1,6 +1,6 @@
 <template>
   <div v-if="loading">
-    <p>Cargando...</p>{{ loading }} <!-- Aquí podrías usar un spinner o algo más estilizado -->
+    <p>Cargando...</p> <!-- Aquí podrías usar un spinner o algo más estilizado -->
   </div>
   <div v-else class="bg-gray-50 min-h-screen">
     <div v-if="user">

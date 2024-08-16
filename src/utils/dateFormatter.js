@@ -11,5 +11,5 @@ export const formatDate = (timestamp) => {
     month = '0' + month;
   }
 
-  return `${day}/${month}/${year}`;
+  return `${day}-${month}-${year}`;
 };

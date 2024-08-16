@@ -1,24 +1,37 @@
 <template>
   <div>
-    <h2>Registrar Pago</h2>
-    <input v-model="amount" type="number" placeholder="Ingresa el monto" />
-    <input v-model="category" type="text" placeholder="Ingresa la categoría" />
+    <h1 class="text-2xl font-semibold	mb-4">Ingresar nuevo pago</h1>
+    <div class="my-1 flex gap-1">
+      <div class="relative flex w-full">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
+        <input
+          :value="formattedAmount"
+          @input="updateAmount($event)"
+          type="text"
+          class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          placeholder="Ingresa el monto" />
+      </div>
+      <input
+        v-model="category"
+        class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        type="text"
+        placeholder="Ingresa la categoría" />
+    </div>
 
-    <!-- <select v-model="selectedGoalId">
-      <option disabled value="">Selecciona un Goal</option>
-      <option v-for="goal in goals" :key="goal.id" :value="goal.id">
-        {{ goal.title }}
-      </option>
-    </select> -->
-
-    <button @click="handleSavePayment">Guardar Pago</button>
+    <button
+      class="mt-4 relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg group hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      @click="handleSavePayment">
+        Ingresar Pago
+    </button>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { getFirestore, collection, query, where, getDocs, addDoc, Timestamp } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { formatNumber } from '../utils/currencyFormatters.js';
+
 
 // eslint-disable-next-line vue/no-setup-props-destructure, no-undef
 const props = defineProps({
@@ -28,13 +41,10 @@ const props = defineProps({
 const amount = ref('');
 const category = ref('');
 const goals = ref([]);
-// const payments = ref([]); 
-
 
 const auth = getAuth();
 const db = getFirestore();
 
-// Definir los eventos que el componente puede emitir
 // eslint-disable-next-line no-undef
 const emit = defineEmits(['paymentSaved']);
 
@@ -46,26 +56,6 @@ const fetchGoals = async () => {
     goals.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 };
-
-// const fetchPayments = async () => {
-//   const user = auth.currentUser;
-//   if (user) {
-//     const q = query(collection(db, 'payments'), where('userId', '==', user.uid));
-//     const querySnapshot = await getDocs(q);
-//     payments.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-//   }
-// };
-
-// const fetchPaymentsForGoal = async () => {
-//   const user = auth.currentUser;
-//   try {
-//     const q = query(collection(db, 'payments'), where('goalId', '==', props.selectedGoalId), where('userId', '==', user.uid));
-//     const querySnapshot = await getDocs(q);
-//     payments.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-//   } catch (error) {
-//     console.error('Error fetching payments for goal:', error);
-//   }
-// };
 
 const handleSavePayment = async () => {
   const user = auth.currentUser;
@@ -86,6 +76,15 @@ const handleSavePayment = async () => {
     amount.value = '';
     category.value = '';
   }
+};
+
+// Computed properties para formatear los montos
+const formattedAmount = computed(() => formatNumber(amount.value || 0));
+
+const updateAmount = (event) => {
+  const value = event.target.value.replace(/[^0-9]/g, ''); // Eliminar todo excepto números
+    amount.value = parseInt(value, 10) || ''; // Actualizar si es un número
+  event.target.value = formatNumber(amount.value); // Formatear el valor mostrado
 };
 
 onMounted(() => {
