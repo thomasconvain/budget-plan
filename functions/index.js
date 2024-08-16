@@ -1,19 +1,23 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
+const functions = require("firebase-functions");
+const axios = require("axios");
+const cors = require("cors")({origin: true}); // Importa y configura CORS
 
-const {onRequest} = require("firebase-functions/v2/https");
-const logger = require("firebase-functions/logger");
+// Obtén la clave de API desde las configuraciones de Firebase Functions
+const apiKey = functions.config().exchangerate.api_key;
 
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
+// Función para obtener la tasa de conversión
+exports.getConversionRate = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => { // Habilita CORS para esta función
+    const fromCurrency = req.query.from;
+    const toCurrency = req.query.to;
 
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+    try {
+      const response = await axios.get(`https://v6.exchangerate-api.com/v6/${apiKey}/pair/${fromCurrency}/${toCurrency}`);
+      const conversionRate = response.data.conversion_rate;
+      res.json({conversionRate});
+    } catch (error) {
+      console.error("error al obtener la tasa de conversión:", error);
+      res.status(500).send("Error al obtener la tasa de conversión");
+    }
+  });
+});
