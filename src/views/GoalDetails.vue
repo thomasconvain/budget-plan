@@ -44,7 +44,7 @@
       <thead>
         <tr>
           <th class="px-6 py-3 border-b border-gray-300 text-left leading-4 text-slate-500 tracking-wider">Monto</th>
-          <th class="px-6 py-3 border-b border-gray-300 text-left leading-4 text-slate-500 tracking-wider">Categoría</th>
+          <th class="hidden sm:table-cell px-6 py-3 border-b border-gray-300 text-left leading-4 text-slate-500 tracking-wider">Categoría</th>
           <th class="px-6 py-3 border-b border-gray-300 text-left leading-4 text-slate-500 tracking-wider">Fecha</th>
           <th class="px-6 py-3 border-b border-gray-300 text-left leading-4 text-slate-500 tracking-wider"></th>
         </tr>
@@ -52,7 +52,7 @@
       <tbody class="bg-transparent">
         <tr v-for="payment in payments" :key="payment.id">
           <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-100">${{ payment.currency !== goal.mainCurrency ? payment.currency :  '' }} {{ formatNumber(payment.amount) }} <span v-if="payment.currency !== goal.mainCurrency" class="text-sm text-slate-400">({{goal.mainCurrency}} {{ formatNumber(convertToMainCurrency(payment.amount, payment.currency, goal.mainCurrency)) }})</span></td>
-          <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-100">{{ payment.category }}</td>
+          <td class="hidden sm:table-cell px-6 py-4 whitespace-no-wrap border-b border-gray-100">{{ payment.category }}</td>
           <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-100 text-slate-300">{{ formatDate(payment.date) }}</td>
           <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-100 text-slate-300"><button @click="handleDeletePayment(payment.id)" class="ml-4 text-slate-300 hover:text-red-600"><TrashIcon class="h-4 w-4" aria-hidden="true" /></button></td>
         </tr>
