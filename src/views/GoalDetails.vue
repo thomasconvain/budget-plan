@@ -65,7 +65,6 @@ const fetchGoalDetails = async (goalId) => {
 };
 
 const onPaymentSaved = () => {
-  console.log('HOLLAAAAAAA');
   fetchPaymentsForGoal();
 };
 
@@ -73,11 +72,8 @@ const fetchPaymentsForGoal = async () => {
   const user = auth.currentUser;
   try {
     const q = query(collection(db, 'payments'), where('goalId', '==', route.params.goalId), where('userId', '==', user.uid));
-    console.log(q);
     const querySnapshot = await getDocs(q);
-    console.log(querySnapshot);
     payments.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    console.log('Payments fetched:', payments.value); // Verifica los resultados obtenidos
   } catch (error) {
     console.error('Error fetching payments for goal:', error);
   }

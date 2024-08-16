@@ -30,25 +30,18 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const store = useStore();
-  // Agregamos logs para ver cómo se comporta
-  console.log('Guard de ruta ejecutado');
 
   if (store.state.loading) {
-    console.log('Esperando a que el usuario se cargue...');
     await store.dispatch('loadUser');
   }
 
   const user = store.getters.user;
-  console.log('Estado del usuario:', user);
 
   if (user && to.path === '/') {
-    console.log('Usuario autenticado, redirigiendo a dashboard');
     next('/dashboard');
   } else if (!user && to.meta.requiresAuth) {
-    console.log('Usuario no autenticado, redirigiendo a home');
     next('/');
   } else {
-    console.log('Navegación permitida');
     next();
   }
 });
