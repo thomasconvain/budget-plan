@@ -34,7 +34,7 @@
       class="my-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
       placeholder="Descripción">
     </textarea>
-    <div class="my-1 flex gap-1">
+    <div class="my-1 flex gap-1 flex-wrap">
       <div class="relative flex w-full">
         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
         <input
@@ -62,7 +62,7 @@
       </option>
     </select>
     </div>
-    <div class="my-1 flex gap-1">
+    <div class="my-1 flex gap-1 flex-wrap">
       <input
         v-model="validFrom"
         type="date"
