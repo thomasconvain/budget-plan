@@ -28,7 +28,7 @@
         <tr v-for="payment in payments" :key="payment.id">
           <td>{{ payment.amount }}</td>
           <td>{{ payment.category }}</td>
-          <td>{{ payment.date }}</td>
+          <td>{{ formatDate(payment.date) }}</td>
         </tr>
       </tbody>
     </table>
@@ -42,6 +42,7 @@ import { getFirestore, doc, getDoc, collection, query, where, getDocs } from 'fi
 import { useRoute } from 'vue-router';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import UserPaymentsList from '../components/UserPaymentsList.vue';
+import {formatDate} from '../utils/dateFormatter.js'
 
 const goal = ref(null);
 const payments = ref([]);

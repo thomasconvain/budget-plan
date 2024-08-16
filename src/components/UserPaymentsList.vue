@@ -17,7 +17,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { getFirestore, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import { getFirestore, collection, query, where, getDocs, addDoc, Timestamp } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 // eslint-disable-next-line vue/no-setup-props-destructure, no-undef
@@ -69,12 +69,14 @@ const fetchGoals = async () => {
 
 const handleSavePayment = async () => {
   const user = auth.currentUser;
+  const currentDate = Timestamp.now(); // Obtener la fecha actual en formato ISO
   if (user && amount.value && category.value && props.selectedGoalId) {
     await addDoc(collection(db, 'payments'), {
       userId: user.uid,
       amount: parseFloat(amount.value),
       category: category.value,
       goalId: props.selectedGoalId,
+      date: currentDate, // Añadir la fecha actual al payment
     });
 
     // Emitir el evento al componente padre en lugar de llamar a fetchPaymentsForGoal
