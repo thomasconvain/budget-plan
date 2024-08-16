@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1 class="text-2xl font-semibold	mb-4">Ingresar nuevo pago</h1>
-    <div class="my-1 flex gap-1">
+    <div class="my-1 flex gap-1 flex-wrap">
       <div class="relative flex w-full">
         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
         <input
@@ -16,6 +16,13 @@
         class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
         type="text"
         placeholder="Ingresa la categoría" />
+        <select
+          v-model="currency"
+          class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+          <option v-for="option in options" :key="option.value" :value="option.value">
+        {{ option.text }}
+      </option>
+    </select>
     </div>
 
     <button
@@ -36,11 +43,18 @@ import { formatNumber } from '../utils/currencyFormatters.js';
 // eslint-disable-next-line vue/no-setup-props-destructure, no-undef
 const props = defineProps({
   selectedGoalId: String,
+  goalMainCurrency: String
 });
 
 const amount = ref('');
 const category = ref('');
+const currency = ref(props.goalMainCurrency);
 const goals = ref([]);
+const options = ref([
+  { value: 'CLP', text: 'Pesos Chilenos' },
+  { value: 'USD', text: 'Dolares' },
+  { value: 'COP', text: 'Pesos Colombianos' },
+]);
 
 const auth = getAuth();
 const db = getFirestore();
@@ -60,13 +74,14 @@ const fetchGoals = async () => {
 const handleSavePayment = async () => {
   const user = auth.currentUser;
   const currentDate = Timestamp.now(); // Obtener la fecha actual en formato ISO
-  if (user && amount.value && category.value && props.selectedGoalId) {
+  if (user && amount.value && category.value && currency && props.selectedGoalId) {
     await addDoc(collection(db, 'payments'), {
       userId: user.uid,
       amount: parseFloat(amount.value),
       category: category.value,
       goalId: props.selectedGoalId,
-      date: currentDate, // Añadir la fecha actual al payment
+      date: currentDate, // Añadir la fecha actual al payment,
+      currency: currency.value,
     });
 
     // Emitir el evento al componente padre en lugar de llamar a fetchPaymentsForGoal

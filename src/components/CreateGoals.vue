@@ -53,6 +53,14 @@
           class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           placeholder="Monto objetivo de ahorro" />
       </div>
+      <select
+          v-model="mainCurrency"
+          placeholder="Divisa principal"
+          class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+          <option v-for="option in options" :key="option.value" :value="option.value" :disabled="option.disabled">
+        {{ option.text }}
+      </option>
+    </select>
     </div>
     <div class="my-1 flex gap-1">
       <input
@@ -87,9 +95,15 @@ const title = ref('');
 const description = ref('');
 const availableAmount = ref('');
 const savingGoalAmount = ref('');
+const mainCurrency = ref('')
 const validFrom = ref('');
 const validUntil = ref('');
 const goals = ref([]);
+const options = ref([
+  { value: '', text: 'Selecciona la moneda principal', disabled: true },
+  { value: 'CLP', text: 'Pesos Chilenos' },
+  { value: 'COP', text: 'Pesos Colombianos' },
+]);
 
 const auth = getAuth();
 const db = getFirestore();
@@ -105,13 +119,14 @@ const fetchGoals = async () => {
 
 const handleSaveGoal = async () => {
   const user = auth.currentUser;
-  if (user && title.value && savingGoalAmount.value && validFrom.value && validUntil.value) {
+  if (user && title.value && savingGoalAmount.value && mainCurrency.value && validFrom.value && validUntil.value) {
     await addDoc(collection(db, 'goals'), {
       title: title.value,
       description: description.value,
       userId: user.uid,
       availableAmount: parseFloat(availableAmount.value),
       savingGoalAmount: parseFloat(savingGoalAmount.value),
+      mainCurrency: mainCurrency.value,
       validFrom: Timestamp.fromDate(new Date(validFrom.value)),
       validUntil: Timestamp.fromDate(new Date(validUntil.value)),
     });
