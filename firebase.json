@@ -17,6 +17,9 @@
     },
     "singleProjectMode": true
   },
+  "functions": {
+    "source": "functions"
+  },
   "hosting": {
     "public": "dist",
     "ignore": [
