@@ -40,38 +40,43 @@
 
 
     <h1 class="my-6 text-2xl font-semibold	mb-4">Movimientos</h1>
-    <table v-if="payments.length > 0" class="min-w-full bg-white shadow-lg rounded-2xl">
-      <thead>
-        <tr>
-          <th class="px-6 py-3 border-b border-gray-300 text-left leading-4 text-slate-500 tracking-wider">Monto</th>
-          <th class="hidden sm:table-cell px-6 py-3 border-b border-gray-300 text-left leading-4 text-slate-500 tracking-wider">Categoría</th>
-          <th class="px-6 py-3 border-b border-gray-300 text-left leading-4 text-slate-500 tracking-wider">Fecha</th>
-          <th class="px-6 py-3 border-b border-gray-300 text-left leading-4 text-slate-500 tracking-wider"></th>
-        </tr>
-      </thead>
-      <tbody class="bg-transparent">
-        <tr v-for="payment in payments" :key="payment.id" :class="payment.category === 'Abono a cuenta' ? 'bg-green-50' : ''">
-          <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-100">${{ payment.currency !== goal.mainCurrency ? payment.currency :  '' }} {{ formatNumber(payment.amount) }} <span v-if="payment.currency !== goal.mainCurrency" class="text-sm text-slate-400">({{goal.mainCurrency}} {{ formatNumber(convertToMainCurrency(payment.amount, payment.currency, goal.mainCurrency)) }})</span></td>
-          <td class="hidden sm:table-cell px-6 py-4 whitespace-no-wrap border-b border-gray-100">{{ payment.category }}</td>
-          <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-100 text-slate-300">{{ formatDate(payment.date) }}</td>
-          <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-100 text-slate-300"><button @click="handleDeletePayment(payment.id)" class="ml-4 text-slate-300 hover:text-red-600"><TrashIcon class="h-4 w-4" aria-hidden="true" /></button></td>
-        </tr>
-      </tbody>
-    </table>
+    <div v-if="payments.length > 0">
+      <div v-for="(payments, date) in groupedPayments" :key="date">
+        <p class="mt-4 text-md font-semibold">{{ formatDateToLargeString(date) }}</p>
+        <ul role="list" class="divide-y divide-gray-100">
+          <li v-for="payment in payments" :key="payment.id">
+            <div class="flex justify-between gap-x-6 py-2">
+              <div class="flex items-center	min-w-4 gap-x-4">
+                <ArrowUpIcon v-if="payment.category !== 'Abono a cuenta'" class="h-4 w-4 text-red-600" />
+                <ArrowDownIcon v-if="payment.category === 'Abono a cuenta'" class="h-4 w-4 text-green-600" />
+                <div class="min-w-14 flex-auto">
+                  <p class="text-sm font-semibold leading-6 text-gray-900">${{ payment.currency !== goal.mainCurrency ? payment.currency :  '' }} {{ formatNumber(payment.amount) }}</p>
+                  <p v-if="payment.currency !== goal.mainCurrency" class="mt-1 truncate text-xs leading-5 text-gray-500">{{goal.mainCurrency}} {{ formatNumber(convertToMainCurrency(payment.amount, payment.currency, goal.mainCurrency)) }}</p>
+                </div>
+              </div>
+              <div class="shrink-0 flex flex-col sm:flex-row sm:items-center items-end gap-2">
+                <p class="text-sm leading-6 text-gray-400">{{ payment.category }}</p>
+                <button @click="handleDeletePayment(payment.id)" class="ml-4 text-slate-300 hover:text-red-600"><TrashIcon class="h-4 w-4" aria-hidden="true" /></button>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
     <p v-else class="text-sm text-slate-400">Aún no tienes movimientos ingresados</p>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { getFirestore, doc, getDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, deleteDoc, Timestamp } from 'firebase/firestore';
 import { useRoute } from 'vue-router';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import UserPaymentsList from '../components/UserPaymentsList.vue';
-import {formatDate} from '../utils/dateFormatter.js'
+import {formatDate, formatDateToLargeString} from '../utils/dateFormatter.js'
 import { formatNumber } from '../utils/currencyFormatters.js';
 import { fetchConversionRate } from '../utils/currencyConverter.js';
-import { CalendarIcon, InformationCircleIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import { CalendarIcon, InformationCircleIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/vue/24/outline';
 
 
 const goal = ref(null);
@@ -140,6 +145,35 @@ const fetchPaymentsForGoal = async () => {
     console.error('Error fetching payments for goal:', error);
   }
 };
+
+// Computed property para agrupar los pagos por fecha única y ordenar por fecha más reciente
+const groupedPayments = computed(() => {
+  const grouped = payments.value.reduce((acc, payment) => {
+    const date = payment.date instanceof Timestamp ? payment.date.toDate() : new Date(payment.date);
+
+    // Normalizar la fecha a medianoche para ignorar horas, minutos y segundos
+    const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate() +1);
+
+    // Convertir la fecha a una cadena en formato 'YYYY-MM-DD'
+    const dateString = normalizedDate.toISOString().split('T')[0];
+
+    if (!acc[dateString]) {
+      acc[dateString] = [];
+    }
+
+    acc[dateString].push(payment);
+
+    return acc;
+  }, {});
+
+  // Ordenar las fechas (claves) en orden descendente para que la fecha más reciente esté arriba
+  return Object.keys(grouped)
+    .sort((a, b) => new Date(b) - new Date(a))
+    .reduce((acc, key) => {
+      acc[key] = grouped[key];
+      return acc;
+    }, {});
+});
 
 const totalPaymentsAmount = computed(() => {
   const totalUSD = payments.value

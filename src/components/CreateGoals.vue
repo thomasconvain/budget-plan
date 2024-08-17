@@ -14,9 +14,7 @@
         <p class="text-sm text-gray-500">{{ formatDate(goal.validUntil) }}</p>
       </div>
     </router-link>
-    <button @click="handleDeleteGoal(goal.id)" class="ml-4 text-red-600 hover:text-red-800">
-      Eliminar
-    </button>
+    <button @click="handleDeleteGoal(goal.id)" class="ml-4 text-slate-300 hover:text-red-600"><TrashIcon class="h-4 w-4" aria-hidden="true" /></button>
   </li>
 </ul>
 
@@ -38,15 +36,16 @@
       <select
           v-model="mainCurrency"
           placeholder="Divisa principal"
-          class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+          class="block w-full sm:w-1/2 pl-2 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
           <option v-for="option in options" :key="option.value" :value="option.value" :disabled="option.disabled">
-        {{ option.text }}
-      </option>
-    </select>
+            {{ option.text }}
+          </option>
+      </select>
       <CurrencyInput
         v-if="mainCurrency == 'CLP'"
         v-model="availableAmount"
         placeholder="Ingresos"
+        :showSelect="false"
         :options="{ currency: 'CLP'
          }"
       />
@@ -54,6 +53,7 @@
         v-if="mainCurrency == 'COP'"
         v-model="availableAmount"
         placeholder="Ingresos"
+        :showSelect="false"
         :options="{ currency: 'COP'
          }"
       />
@@ -61,6 +61,7 @@
         v-if="mainCurrency == 'CLP'"
         v-model="savingGoalAmount"
         placeholder="Objetivo de ahorro"
+        :showSelect="false"
         :options="{ currency: 'CLP'
          }"
       />
@@ -68,6 +69,7 @@
         v-if="mainCurrency == 'COP'"
         v-model="savingGoalAmount"
         placeholder="Objetivo de ahorro"
+        :showSelect="false"
         :options="{ currency: 'COP'
          }"
       />
@@ -87,7 +89,7 @@
     <button
       class="mt-4 relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg group hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
       @click="handleSaveGoal">
-        Guardar meta
+        Crear meta
     </button>
   </div>
 </template>
@@ -97,7 +99,7 @@ import { ref, onMounted } from 'vue';
 import CurrencyInput from './CurrencyInput.vue';
 import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, writeBatch, Timestamp } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { CurrencyDollarIcon } from '@heroicons/vue/24/outline';
+import { CurrencyDollarIcon, TrashIcon } from '@heroicons/vue/24/outline';
 import {formatDate} from '../utils/dateFormatter.js'
 
 const title = ref('');

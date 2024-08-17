@@ -111,7 +111,8 @@ const iconMap = {
   ShoppingCartIcon : OutlineIcons.ShoppingCartIcon,
   ShoppingBagIcon : OutlineIcons.ShoppingBagIcon,
   BanknotesIcon : OutlineIcons.BanknotesIcon,
-  CurrencyDollarIcon : OutlineIcons.CurrencyDollarIcon
+  CurrencyDollarIcon : OutlineIcons.CurrencyDollarIcon,
+  LightBulbIcon : OutlineIcons.LightBulbIcon
 
   // Agrega aquí todos los íconos que necesites
 };
