@@ -39,8 +39,8 @@
       @paymentSaved="onPaymentSaved" />
 
 
-    <h1 class="my-6 text-2xl font-semibold	mb-4">Pagos</h1>
-    <table v-if="payments.length > 0" class="mb-24 min-w-full bg-white shadow-lg rounded-2xl">
+    <h1 class="my-6 text-2xl font-semibold	mb-4">Movimientos</h1>
+    <table v-if="payments.length > 0" class="min-w-full bg-white shadow-lg rounded-2xl">
       <thead>
         <tr>
           <th class="px-6 py-3 border-b border-gray-300 text-left leading-4 text-slate-500 tracking-wider">Monto</th>
@@ -50,7 +50,7 @@
         </tr>
       </thead>
       <tbody class="bg-transparent">
-        <tr v-for="payment in payments" :key="payment.id">
+        <tr v-for="payment in payments" :key="payment.id" :class="payment.category === 'Abono a cuenta' ? 'bg-green-50' : ''">
           <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-100">${{ payment.currency !== goal.mainCurrency ? payment.currency :  '' }} {{ formatNumber(payment.amount) }} <span v-if="payment.currency !== goal.mainCurrency" class="text-sm text-slate-400">({{goal.mainCurrency}} {{ formatNumber(convertToMainCurrency(payment.amount, payment.currency, goal.mainCurrency)) }})</span></td>
           <td class="hidden sm:table-cell px-6 py-4 whitespace-no-wrap border-b border-gray-100">{{ payment.category }}</td>
           <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-100 text-slate-300">{{ formatDate(payment.date) }}</td>
@@ -70,7 +70,7 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import UserPaymentsList from '../components/UserPaymentsList.vue';
 import {formatDate} from '../utils/dateFormatter.js'
 import { formatNumber } from '../utils/currencyFormatters.js';
-// import { fetchConversionRate } from '../utils/currencyConverter.js';
+import { fetchConversionRate } from '../utils/currencyConverter.js';
 import { CalendarIcon, InformationCircleIcon, TrashIcon } from '@heroicons/vue/24/outline';
 
 
@@ -191,10 +191,10 @@ function convertToMainCurrency(amount, paymentCurrency, mainCurrency) {
 
 onMounted(async () => {
   const goalId = route.params.goalId;
-  // conversionRateUSDCLP.value = await fetchConversionRate('USD', 'CLP');
-  // conversionRateUSDCOP.value = await fetchConversionRate('USD', 'COP');
-  // conversionRateCOPCLP.value = await fetchConversionRate('COP', 'CLP');
-  // conversionRateCLPCOP.value = await fetchConversionRate('CLP', 'COP');
+  conversionRateUSDCLP.value = await fetchConversionRate('USD', 'CLP');
+  conversionRateUSDCOP.value = await fetchConversionRate('USD', 'COP');
+  conversionRateCOPCLP.value = await fetchConversionRate('COP', 'CLP');
+  conversionRateCLPCOP.value = await fetchConversionRate('CLP', 'COP');
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       try {

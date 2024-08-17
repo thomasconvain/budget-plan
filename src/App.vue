@@ -6,7 +6,7 @@
     <div v-if="user">
       <NavBar />
     </div>
-    <div class="px-10 md:max-w-4xl m-auto">
+    <div class="px-10 pb-20 md:max-w-4xl m-auto">
       <router-view />
     </div>
   </div>

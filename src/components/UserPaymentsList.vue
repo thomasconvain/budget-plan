@@ -1,33 +1,41 @@
 <template>
   <div>
-    <h1 class="text-2xl font-semibold	mb-4">Ingresar nuevo pago</h1>
+    <h1 class="text-2xl font-semibold	mb-4">Ingresar nuevo movimiento</h1>
     <div class="my-1 flex gap-1 flex-wrap sm:flex-nowrap">
-      <select
-        v-model="currency"
-        class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-        <option v-for="option in options" :key="option.value" :value="option.value">
-          {{ option.text }}
-        </option>
-      </select>
       <CurrencyInput
+        class="sm:w-1/2 w-full"
         v-if="currency == 'CLP'"
         v-model="amount"
-        :options="{ currency: 'CLP'
-         }"
+        v-model:currency="currency"
+        :options="{
+          currency: 'CLP',
+          currencyDisplay: 'hidden'
+        }"
+        :currencyOptions="options"
       />
       <CurrencyInput
+        class="sm:w-1/2 w-full"
         v-if="currency == 'COP'"
         v-model="amount"
-        :options="{ currency: 'COP'
-         }"
+        v-model:currency="currency"
+        :options="{
+          currency: 'COP',
+          currencyDisplay: 'hidden'
+        }"
+        :currencyOptions="options"
       />
       <CurrencyInput
+        class="sm:w-1/2 w-full"
         v-if="currency == 'USD'"
         v-model="amount"
-        :options="{ currency: 'USD'
-         }"
+        v-model:currency="currency"
+        :options="{
+          currency: 'USD',
+          currencyDisplay: 'hidden'
+        }"
+        :currencyOptions="options"
       />
-      <Listbox as="div" v-model="category">
+      <Listbox as="div" class="grow" v-model="category">
         <div class="relative">
           <ListboxButton class="relative w-full cursor-default rounded-md bg-white py-2 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm sm:leading-6">
             <span class="flex items-center">
@@ -61,7 +69,7 @@
     <button
       class="mt-4 relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg group hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
       @click="handleSavePayment">
-        Ingresar Pago {{ currency }}
+        Ingresar
     </button>
   </div>
 </template>
@@ -102,7 +110,8 @@ const iconMap = {
   BuildingStorefrontIcon : OutlineIcons.BuildingStorefrontIcon,
   ShoppingCartIcon : OutlineIcons.ShoppingCartIcon,
   ShoppingBagIcon : OutlineIcons.ShoppingBagIcon,
-  BanknotesIcon : OutlineIcons.BanknotesIcon
+  BanknotesIcon : OutlineIcons.BanknotesIcon,
+  CurrencyDollarIcon : OutlineIcons.CurrencyDollarIcon
 
   // Agrega aquí todos los íconos que necesites
 };
@@ -145,10 +154,25 @@ const getIconComponent = (iconName) => {
 const handleSavePayment = async () => {
   const user = auth.currentUser;
   const currentDate = Timestamp.now(); // Obtener la fecha actual en formato ISO
-  if (user && amount.value && category.value && currency && props.selectedGoalId) {
+  if (user && amount.value && category.value.name !== 'Abono a cuenta' && currency && props.selectedGoalId) {
     await addDoc(collection(db, 'payments'), {
       userId: user.uid,
       amount: parseFloat(amount.value),
+      category: category.value.name,
+      goalId: props.selectedGoalId,
+      date: currentDate, // Añadir la fecha actual al payment,
+      currency: currency.value,
+    });
+
+    // Emitir el evento al componente padre en lugar de llamar a fetchPaymentsForGoal
+    emit('paymentSaved');
+
+    // Limpiar los campos
+    amount.value = '';
+  } else if (category.value.name === 'Abono a cuenta') {
+    await addDoc(collection(db, 'payments'), {
+      userId: user.uid,
+      amount: -Math.abs(parseFloat(amount.value)),
       category: category.value.name,
       goalId: props.selectedGoalId,
       date: currentDate, // Añadir la fecha actual al payment,
