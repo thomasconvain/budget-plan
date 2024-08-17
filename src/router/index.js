@@ -14,12 +14,18 @@ const routes = [
     path: '/dashboard',
     name: 'Dashboard',
     component: Dashboard,
+    meta: {
+      requiresAuth: true // Esta ruta requiere autenticación
+    }
   },
   {
     path: '/goal/:goalId',
     name: 'GoalDetails',
     component: GoalDetails,
     props: true,
+    meta: {
+      requiresAuth: true // Esta ruta requiere autenticación
+    }
   },
 ];
 
