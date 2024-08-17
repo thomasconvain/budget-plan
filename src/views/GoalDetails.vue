@@ -70,7 +70,7 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import UserPaymentsList from '../components/UserPaymentsList.vue';
 import {formatDate} from '../utils/dateFormatter.js'
 import { formatNumber } from '../utils/currencyFormatters.js';
-import { fetchConversionRate } from '../utils/currencyConverter.js';
+// import { fetchConversionRate } from '../utils/currencyConverter.js';
 import { CalendarIcon, InformationCircleIcon, TrashIcon } from '@heroicons/vue/24/outline';
 
 
@@ -191,10 +191,10 @@ function convertToMainCurrency(amount, paymentCurrency, mainCurrency) {
 
 onMounted(async () => {
   const goalId = route.params.goalId;
-  conversionRateUSDCLP.value = await fetchConversionRate('USD', 'CLP');
-  conversionRateUSDCOP.value = await fetchConversionRate('USD', 'COP');
-  conversionRateCOPCLP.value = await fetchConversionRate('COP', 'CLP');
-  conversionRateCLPCOP.value = await fetchConversionRate('CLP', 'COP');
+  // conversionRateUSDCLP.value = await fetchConversionRate('USD', 'CLP');
+  // conversionRateUSDCOP.value = await fetchConversionRate('USD', 'COP');
+  // conversionRateCOPCLP.value = await fetchConversionRate('COP', 'CLP');
+  // conversionRateCLPCOP.value = await fetchConversionRate('CLP', 'COP');
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       try {
