@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="flex items-center justify-center min-h-screen">
+    <div class="flex items-center justify-center my-24">
     <div class="w-full max-w-md p-8 space-y-6 bg-white shadow-lg rounded-xl">
       <div class="flex justify-center">
         <!-- <svg class="w-10 h-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">

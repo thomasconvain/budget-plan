@@ -1,27 +1,27 @@
 <template>
-  <div v-if="loading">
-    <p>Cargando...</p> <!-- Aquí podrías usar un spinner o algo más estilizado -->
-  </div>
-  <div v-else class="bg-gray-50 min-h-screen">
-    <div v-if="user">
+
+  <div class="bg-gray-50 min-h-screen">
+    <div>
       <NavBar />
     </div>
     <div class="px-10 pb-20 md:max-w-4xl m-auto">
-      <router-view />
+      <div v-if="loading">
+        <p>Cargando...</p> <!-- Aquí podrías usar un spinner o algo más estilizado -->
+      </div>
+      <router-view v-else />
     </div>
+    <FooterSection class="bottom-0"/>
   </div>
 </template>
 
 <script setup>
 import NavBar from './components/NavBar.vue'
+import FooterSection from './components/FooterSecction.vue'
 
 import { useStore } from 'vuex';
 import { computed } from 'vue';
 
 const store = useStore();
-
-// Acceder al getter 'user' del store
-const user = computed(() => store.getters.user);
 const loading = computed(() => store.getters.loading);
 </script>
 
