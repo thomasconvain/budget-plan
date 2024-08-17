@@ -35,24 +35,6 @@
       placeholder="Descripción">
     </textarea>
     <div class="my-1 flex gap-1 flex-wrap sm:flex-nowrap">
-      <div class="relative flex w-full">
-        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
-        <input
-          :value="formattedAvailableAmount"
-          @input="updateAvailableAmount($event)"
-          type="text"
-          class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          placeholder="Monto disponible" />
-      </div>
-      <div class="relative flex w-full">
-        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
-        <input
-          :value="formattedSavingGoalAmount"
-          @input="updateSavingGoalAmount($event)"
-          type="text"
-          class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          placeholder="Monto objetivo de ahorro" />
-      </div>
       <select
           v-model="mainCurrency"
           placeholder="Divisa principal"
@@ -61,6 +43,34 @@
         {{ option.text }}
       </option>
     </select>
+      <CurrencyInput
+        v-if="mainCurrency == 'CLP'"
+        v-model="availableAmount"
+        placeholder="Ingresos"
+        :options="{ currency: 'CLP'
+         }"
+      />
+      <CurrencyInput
+        v-if="mainCurrency == 'COP'"
+        v-model="availableAmount"
+        placeholder="Ingresos"
+        :options="{ currency: 'COP'
+         }"
+      />
+      <CurrencyInput
+        v-if="mainCurrency == 'CLP'"
+        v-model="savingGoalAmount"
+        placeholder="Objetivo de ahorro"
+        :options="{ currency: 'CLP'
+         }"
+      />
+      <CurrencyInput
+        v-if="mainCurrency == 'COP'"
+        v-model="savingGoalAmount"
+        placeholder="Objetivo de ahorro"
+        :options="{ currency: 'COP'
+         }"
+      />
     </div>
     <div class="my-1 flex gap-1 flex-wrap sm:flex-nowrap">
       <input
@@ -84,18 +94,17 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import CurrencyInput from './CurrencyInput.vue';
 import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, writeBatch, Timestamp } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { CurrencyDollarIcon } from '@heroicons/vue/24/outline';
-import { formatNumber } from '../utils/currencyFormatters.js';
 import {formatDate} from '../utils/dateFormatter.js'
-import { computed } from 'vue';
 
 const title = ref('');
 const description = ref('');
-const availableAmount = ref('');
-const savingGoalAmount = ref('');
-const mainCurrency = ref('')
+const availableAmount = ref(null);
+const savingGoalAmount = ref(null);
+const mainCurrency = ref('CLP')
 const validFrom = ref('');
 const validUntil = ref('');
 const goals = ref([]);
@@ -164,23 +173,6 @@ const handleDeleteGoal = async (goalId) => {
     // Actualizar la lista de metas después de eliminar
     fetchGoals();
   }
-};
-
-// Computed properties para formatear los montos
-const formattedAvailableAmount = computed(() => formatNumber(availableAmount.value || 0));
-const formattedSavingGoalAmount = computed(() => formatNumber(savingGoalAmount.value || 0));
-
-// Funciones para manejar la actualización de los campos con formateo
-const updateAvailableAmount = (event) => {
-  const value = event.target.value.replace(/[^0-9]/g, ''); // Eliminar todo excepto números
-  availableAmount.value = parseInt(value, 10) || ''; // Actualizar si es un número
-  event.target.value = formatNumber(availableAmount.value); // Formatear el valor mostrado
-};
-
-const updateSavingGoalAmount = (event) => {
-  const value = event.target.value.replace(/[^0-9]/g, ''); // Eliminar todo excepto números
-  savingGoalAmount.value = parseInt(value, 10) || ''; // Actualizar si es un número
-  event.target.value = formatNumber(savingGoalAmount.value); // Formatear el valor mostrado
 };
 
 onMounted(() => {

@@ -20,10 +20,10 @@ export const formatNumber = (value) => {
   if (!value) return '';
   
   // Asegurarnos de que value sea un número
-  const num = parseInt(value, 10);
+  const num = parseFloat(value, 10);
   
   if (isNaN(num)) return '';
 
   // Formatear el número con puntos cada 3 dígitos
-  return num.toLocaleString('es-CL', { maximumFractionDigits: 0 });
+  return num.toLocaleString('es-CL', { maximumFractionDigits: 2 });
 };

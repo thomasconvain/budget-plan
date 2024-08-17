@@ -2,42 +2,51 @@
   <div>
     <h1 class="text-2xl font-semibold	mb-4">Ingresar nuevo pago</h1>
     <div class="my-1 flex gap-1 flex-wrap sm:flex-nowrap">
-      <div class="relative flex w-full">
-        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
-        <input
-          :value="formattedAmount"
-          @input="updateAmount($event)"
-          type="text"
-          class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          placeholder="Ingresa el monto" />
-      </div>
+      <select
+        v-model="currency"
+        class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+        <option v-for="option in options" :key="option.value" :value="option.value">
+          {{ option.text }}
+        </option>
+      </select>
+      <CurrencyInput
+        v-if="currency == 'CLP'"
+        v-model="amount"
+        :options="{ currency: 'CLP'
+         }"
+      />
+      <CurrencyInput
+        v-if="currency == 'COP'"
+        v-model="amount"
+        :options="{ currency: 'COP'
+         }"
+      />
+      <CurrencyInput
+        v-if="currency == 'USD'"
+        v-model="amount"
+        :options="{ currency: 'USD'
+         }"
+      />
       <input
         v-model="category"
         class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
         type="text"
         placeholder="Ingresa la categoría" />
-        <select
-          v-model="currency"
-          class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-          <option v-for="option in options" :key="option.value" :value="option.value">
-        {{ option.text }}
-      </option>
-    </select>
     </div>
 
     <button
       class="mt-4 relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg group hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
       @click="handleSavePayment">
-        Ingresar Pago
+        Ingresar Pago {{ currency }}
     </button>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { getFirestore, collection, query, where, getDocs, addDoc, Timestamp } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { formatNumber } from '../utils/currencyFormatters.js';
+import CurrencyInput from './CurrencyInput.vue';
 
 
 // eslint-disable-next-line vue/no-setup-props-destructure, no-undef
@@ -46,7 +55,7 @@ const props = defineProps({
   goalMainCurrency: String
 });
 
-const amount = ref('');
+const amount = ref(null);
 const category = ref('');
 const currency = ref(props.goalMainCurrency);
 const goals = ref([]);
@@ -93,14 +102,7 @@ const handleSavePayment = async () => {
   }
 };
 
-// Computed properties para formatear los montos
-const formattedAmount = computed(() => formatNumber(amount.value || 0));
 
-const updateAmount = (event) => {
-  const value = event.target.value.replace(/[^0-9]/g, ''); // Eliminar todo excepto números
-    amount.value = parseInt(value, 10) || ''; // Actualizar si es un número
-  event.target.value = formatNumber(amount.value); // Formatear el valor mostrado
-};
 
 onMounted(() => {
   onAuthStateChanged(auth, (user) => {
