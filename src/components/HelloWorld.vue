@@ -21,7 +21,7 @@
             <label for="password" class="sr-only">Clave</label>
             <input v-model="password" id="password" name="password" type="password" autocomplete="current-password" required
                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                   placeholder="Password">
+                   placeholder="Contraseña">
             <p v-if="error">{{ error }}</p>
           </div>
         </div>
