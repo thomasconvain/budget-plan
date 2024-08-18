@@ -1,6 +1,6 @@
 <template>
   <div v-if="isLoading">
-    <p>Cargando información del goal...</p>
+    <LoadingSpinner />
   </div>
   <div v-else>
     <div class="mt-6 flex items-center justify-between">
@@ -73,6 +73,7 @@ import { getFirestore, doc, getDoc, collection, query, where, getDocs, deleteDoc
 import { useRoute } from 'vue-router';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import UserPaymentsList from '../components/UserPaymentsList.vue';
+import LoadingSpinner from '../components/LoadingSpinner.vue'
 import {formatDate, formatDateToLargeString} from '../utils/dateFormatter.js'
 import { formatNumber } from '../utils/currencyFormatters.js';
 import { fetchConversionRate } from '../utils/currencyConverter.js';

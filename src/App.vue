@@ -6,17 +6,18 @@
     </div>
     <div class="px-10 pb-20 md:max-w-4xl m-auto">
       <div v-if="loading">
-        <p>Cargando...</p> <!-- Aquí podrías usar un spinner o algo más estilizado -->
+        <LoadingSpinner />
       </div>
       <router-view v-else />
     </div>
-    <FooterSection class="bottom-0"/>
+    <FooterSection v-if="!loading" class="bottom-0"/>
   </div>
 </template>
 
 <script setup>
 import NavBar from './components/NavBar.vue'
-import FooterSection from './components/FooterSecction.vue'
+import FooterSection from './components/FooterSection.vue'
+import LoadingSpinner from './components/LoadingSpinner.vue'
 
 import { useStore } from 'vuex';
 import { computed } from 'vue';

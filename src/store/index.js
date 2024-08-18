@@ -7,7 +7,6 @@ import router from '@/router';
 const store = createStore({
   state: {
     user: null,
-    address: null,
     loading: true,
   },
   mutations: {
@@ -16,10 +15,6 @@ const store = createStore({
     },
     clearUser(state) {
       state.user = null;
-      state.address = null;
-    },
-    setAddress(state, address) {
-      state.address = address;
     },
     setLoading(state, isLoading) {
       state.loading = isLoading;
@@ -33,10 +28,8 @@ const store = createStore({
         commit('setUser', user);
 
         const userDocRef = doc(db, 'users', user.uid);
-        await setDoc(userDocRef, { userId: user.uid, email, name, address: '' });
-
-        commit('setAddress', ''); 
-        return true;
+        await setDoc(userDocRef, { userId: user.uid, email, name });
+        router.push('/dashboard');
       } catch (error) {
         console.error('Error durante el registro:', error);
         throw error;
@@ -53,10 +46,9 @@ const store = createStore({
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
-          commit('setAddress', userDoc.data().address);
+          // DO NOTHING
         } else {
-          await setDoc(userDocRef, { userId: user.uid, address: '' });
-          commit('setAddress', '');
+          await setDoc(userDocRef, { userId: user.uid });
         }
         router.push('/dashboard');
       } catch (error) {
@@ -74,10 +66,9 @@ const store = createStore({
         const userDoc = await getDoc(userDocRef);
   
         if (userDoc.exists()) {
-          commit('setAddress', userDoc.data().address);
+          // DO NOTHING
         } else {
-          await setDoc(userDocRef, { userId: user.uid, address: '' });
-          commit('setAddress', '');
+          await setDoc(userDocRef, { userId: user.uid });
         }
         router.push('/dashboard');
       } catch (error) {
@@ -92,15 +83,6 @@ const store = createStore({
         router.push('/')
       } catch (error) {
         console.error('Error durante el cierre de sesión:', error);
-      }
-    },
-    async saveAddress({ state, commit }, address) {
-      try {
-        const userDocRef = doc(db, 'users', state.user.uid);
-        await setDoc(userDocRef, { address }, { merge: true });
-        commit('setAddress', address);
-      } catch (error) {
-        console.error('Error al guardar la dirección:', error);
       }
     },
     async savePayment({ state }, paymentData) {
@@ -126,10 +108,9 @@ const store = createStore({
             const userDoc = await getDoc(userDocRef);
 
             if (userDoc.exists()) {
-              commit('setAddress', userDoc.data().address);
+              //DO NOTHING
             } else {
-              await setDoc(userDocRef, { userId: user.uid, address: '' });
-              commit('setAddress', '');
+              await setDoc(userDocRef, { userId: user.uid });
             }
           } else {
             commit('clearUser');
@@ -142,7 +123,6 @@ const store = createStore({
   },
   getters: {
     user: (state) => state.user,
-    address: (state) => state.address,
     loading: (state) => state.loading,
   },
 });

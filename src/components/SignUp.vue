@@ -25,6 +25,7 @@
 
 <script>
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import router from '@/router'; 
 
 export default {
   data() {
@@ -41,6 +42,7 @@ export default {
         const result = await createUserWithEmailAndPassword(auth, this.email, this.password);
         console.log('User created successfully:', result.user);
         this.error = '';
+        router.push('/dashboard');
       } catch (err) {
         console.error('Error during user registration:', err);
         this.error = 'Error al crear la cuenta: ' + err.message;

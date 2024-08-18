@@ -101,6 +101,7 @@ import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { CurrencyDollarIcon, TrashIcon } from '@heroicons/vue/24/outline';
 import {formatDate} from '../utils/dateFormatter.js'
+import {fetchGoals} from '../utils/business/goals.js'
 
 const title = ref('');
 const description = ref('');
@@ -119,15 +120,6 @@ const options = ref([
 const auth = getAuth();
 const db = getFirestore();
 
-const fetchGoals = async () => {
-  const user = auth.currentUser;
-  if (user) {
-    const q = query(collection(db, 'goals'), where('userId', '==', user.uid));
-    const querySnapshot = await getDocs(q);
-    goals.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  }
-};
-
 const handleSaveGoal = async () => {
   const user = auth.currentUser;
   if (user && title.value && savingGoalAmount.value && mainCurrency.value && validFrom.value && validUntil.value) {
@@ -143,7 +135,7 @@ const handleSaveGoal = async () => {
     });
 
     // Actualizar la lista de goals después de agregar uno nuevo
-    fetchGoals();
+    goals.value = await fetchGoals();
 
     // Limpiar los campos del formulario
     title.value = '';
@@ -173,14 +165,14 @@ const handleDeleteGoal = async (goalId) => {
     await deleteDoc(doc(db, 'goals', goalId));
 
     // Actualizar la lista de metas después de eliminar
-    fetchGoals();
+    goals.value = await fetchGoals();
   }
 };
 
 onMounted(() => {
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     if (user) {
-      fetchGoals();
+      goals.value = await fetchGoals();
     }
   });
 });
