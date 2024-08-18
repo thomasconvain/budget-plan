@@ -1,5 +1,8 @@
 <template>
-  <div class="pt-6">
+  <div v-if="isLoading">
+    <LoadingSpinner />
+  </div>
+  <div v-else>
     <h1 class="text-2xl font-semibold	mb-4">Tus metas</h1>
     <div v-if="goals.length > 0" class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg">
       <ul role="list" class="divide-y divide-gray-200">
@@ -103,6 +106,7 @@ import { CurrencyDollarIcon, TrashIcon } from '@heroicons/vue/24/outline';
 import {formatDate} from '../utils/dateFormatter.js'
 import {fetchGoals} from '../utils/business/goals.js'
 
+const isLoading = ref('true')
 const title = ref('');
 const description = ref('');
 const availableAmount = ref(null);
@@ -173,6 +177,7 @@ onMounted(() => {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       goals.value = await fetchGoals();
+      isLoading.value = false; // Desactivar estado de carga cuando todo esté cargado
     }
   });
 });

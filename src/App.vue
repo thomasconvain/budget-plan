@@ -1,16 +1,18 @@
 <template>
 
-  <div class="bg-gray-50 min-h-screen">
-    <div>
-      <NavBar />
+  <div class="flex flex-col bg-gray-50 min-h-screen">
+    <div class="mb-24 z-50">
+      <NavBar class="fixed w-full"/>
     </div>
-    <div class="px-10 pb-20 md:max-w-4xl m-auto">
+    <div class="px-10 pb-5 md:max-w-4xl m-auto">
       <div v-if="loading">
         <LoadingSpinner />
       </div>
-      <router-view v-else />
+      <div v-else class="flex-grow">
+      <router-view  />
+      </div>
     </div>
-    <FooterSection v-if="!loading" class="bottom-0"/>
+    <FooterSection class="bottom-0"/>
   </div>
 </template>
 

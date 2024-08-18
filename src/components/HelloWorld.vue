@@ -1,14 +1,14 @@
 <template>
   <div>
     <div class="flex items-center justify-center my-24">
-    <div class="w-full max-w-md p-8 space-y-6 bg-white shadow-lg rounded-xl">
+    <div class="w-full min-w-96 max-w-md p-8 space-y-6 bg-white shadow-lg rounded-xl">
       <div class="flex justify-center">
         <!-- <svg class="w-10 h-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 .552-.895 1-2 1s-2-.448-2-1 .895-1 2-1 2 .448 2 1zm0 4c0 .552-.895 1-2 1s-2-.448-2-1 .895-1 2-1 2 .448 2 1z"/>
         </svg> -->
       </div>
       <h2 v-if="!isSignup" class="text-2xl font-bold text-center text-gray-900">Hola 👋</h2>
-      <h2 v-else class="text-2xl font-bold text-center text-gray-900">Crea una cuenta</h2>
+      <h2 v-else class="text-2xl font-bold text-center text-gray-900">Crea una cuenta 🚀</h2>
       <form v-if="!isSignup" class="mt-8 space-y-6" @submit.prevent="loginWithEmail">
         <div class="rounded-xl shadow-sm">
           <div>
@@ -48,7 +48,7 @@
         </div>
       </form>
       <div class="flex justify-center">
-          <div>
+          <div v-if="!isSignup">
             <button @click="signIn" class="gsi-material-button" style="width:300px">
               <div class="gsi-material-button-state"></div>
               <div class="gsi-material-button-content-wrapper">
