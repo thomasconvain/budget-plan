@@ -25,16 +25,18 @@
     <p v-else>No tienes metas registradas.</p>
 
     <h1 class="mt-6 text-2xl font-semibold	mb-4">Crear nueva meta</h1>
+    <div class="my-1 flex gap-1 flex-wrap sm:flex-nowrap">
     <input 
       v-model="title"
       type="text" 
       class="my-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
       placeholder="Título" />
-    <textarea
+    <input
       v-model="description"
+      type="text"
       class="my-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-      placeholder="Descripción">
-    </textarea>
+      placeholder="Descripción" />
+    </div>
     <div class="my-1 flex gap-1 flex-wrap sm:flex-nowrap">
       <select
           v-model="mainCurrency"
@@ -47,6 +49,7 @@
       <CurrencyInput
         v-if="mainCurrency == 'CLP'"
         v-model="availableAmount"
+        class="w-full"
         placeholder="Ingresos"
         :showSelect="false"
         :options="{ currency: 'CLP'
@@ -55,6 +58,7 @@
       <CurrencyInput
         v-if="mainCurrency == 'COP'"
         v-model="availableAmount"
+        class="w-full"
         placeholder="Ingresos"
         :showSelect="false"
         :options="{ currency: 'COP'
@@ -63,6 +67,7 @@
       <CurrencyInput
         v-if="mainCurrency == 'CLP'"
         v-model="savingGoalAmount"
+        class="w-full"
         placeholder="Objetivo de ahorro"
         :showSelect="false"
         :options="{ currency: 'CLP'
@@ -71,6 +76,7 @@
       <CurrencyInput
         v-if="mainCurrency == 'COP'"
         v-model="savingGoalAmount"
+        class="w-full"
         placeholder="Objetivo de ahorro"
         :showSelect="false"
         :options="{ currency: 'COP'
@@ -78,16 +84,23 @@
       />
     </div>
     <div class="my-1 flex gap-1 flex-wrap sm:flex-nowrap">
-      <input
-        v-model="validFrom"
-        type="date"
-        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-        placeholder="Válido desde" />
-      <input
-        v-model="validUntil"
-        type="date"
-        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-        placeholder="Válido hasta" />
+      <div class="flex flex-col w-full">
+        <label for="ValidFrom" class="block text-sm font-medium leading-6 text-gray-900">Fecha de inicio</label>
+        <input
+          v-model="validFrom"
+          name="validFrom"
+          type="date"
+          class="block px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          placeholder="Válido desde" />
+      </div>
+      <div class="flex flex-col w-full">
+        <label for="ValidUntil" class="block text-sm font-medium leading-6 text-gray-900">Fecha de termino</label>
+        <input
+          v-model="validUntil"
+          type="date"
+          class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          placeholder="Válido hasta" />
+      </div>
     </div>
     <button
       class="mt-4 relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg group hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
