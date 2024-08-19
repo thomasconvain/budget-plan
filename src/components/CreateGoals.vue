@@ -190,7 +190,6 @@ const handleDeleteGoal = async (goalId) => {
 const calculateDaysRemaining = (targetDate) => {
   const today = new Date();
   const differenceInMillis = targetDate - today;
-  console.log(targetDate.value)
   return Math.ceil(differenceInMillis / (1000 * 60 * 60 * 24));
 }
 

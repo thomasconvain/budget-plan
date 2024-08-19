@@ -101,7 +101,6 @@ const stats = computed(() => [
 const calculateDaysRemaining = () => {
   const today = new Date();
   const differenceInMillis = targetDate.value - today;
-  console.log(targetDate.value)
   daysRemaining.value = Math.ceil(differenceInMillis / (1000 * 60 * 60 * 24));
 }
 
