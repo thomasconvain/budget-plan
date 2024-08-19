@@ -8,6 +8,9 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/cli": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
     "@headlessui/vue": "^1.7.22",
     "@heroicons/vue": "^2.1.5",
     "core-js": "^3.8.3",
