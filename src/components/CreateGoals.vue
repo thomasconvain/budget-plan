@@ -14,7 +14,8 @@
         <p class="text-sm text-gray-500">{{ goal.description }}</p>
       </div>
       <div class="text-right ml-auto">
-        <p class="text-sm text-gray-500">{{ formatDate(goal.validUntil) }}</p>
+        <p v-if="calculateDaysRemaining(goal.validUntil.toDate()) > 0" class="text-sm text-gray-500">Termina en {{calculateDaysRemaining(goal.validUntil.toDate()) }}  {{ calculateDaysRemaining(goal.validUntil.toDate()) <= 1 ? 'día' : 'días' }}</p>
+        <p v-else class="text-sm text-gray-500">Meta terminada</p>
       </div>
     </router-link>
     <button @click="handleDeleteGoal(goal.id)" class="ml-4 text-slate-300 hover:text-red-600"><TrashIcon class="h-4 w-4" aria-hidden="true" /></button>
@@ -116,7 +117,7 @@ import CurrencyInput from './CurrencyInput.vue';
 import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, writeBatch, Timestamp } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { CurrencyDollarIcon, TrashIcon } from '@heroicons/vue/24/outline';
-import {formatDate} from '../utils/dateFormatter.js'
+// import {formatDateToLargeString} from '../utils/dateFormatter.js'
 import {fetchGoals} from '../utils/business/goals.js'
 
 const isLoading = ref('true')
@@ -185,6 +186,13 @@ const handleDeleteGoal = async (goalId) => {
     goals.value = await fetchGoals();
   }
 };
+
+const calculateDaysRemaining = (targetDate) => {
+  const today = new Date();
+  const differenceInMillis = targetDate - today;
+  console.log(targetDate.value)
+  return Math.ceil(differenceInMillis / (1000 * 60 * 60 * 24));
+}
 
 onMounted(() => {
   onAuthStateChanged(auth, async (user) => {
