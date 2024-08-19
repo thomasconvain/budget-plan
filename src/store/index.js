@@ -1,5 +1,5 @@
 import { createStore } from 'vuex';
-import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithRedirect, GoogleAuthProvider, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
 import { auth, db } from '@/firebase';
 import router from '@/router'; 
@@ -35,26 +35,16 @@ const store = createStore({
         throw error;
       }
     },
-    async signIn({ commit }) {
+    async signIn() {
       try {
         const provider = new GoogleAuthProvider();
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        commit('setUser', user);
-
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-
-        if (userDoc.exists()) {
-          // DO NOTHING
-        } else {
-          await setDoc(userDocRef, { userId: user.uid });
-        }
-        router.push('/dashboard');
+        await signInWithRedirect(auth, provider);
+        // Después de redirigir, Firebase continuará la autenticación automáticamente
       } catch (error) {
         console.error('Error durante el inicio de sesión:', error);
       }
     },
+    
     async signInWithEmail({ commit }, { email, password }) {
       try {
         const result = await signInWithEmailAndPassword(auth, email, password);
