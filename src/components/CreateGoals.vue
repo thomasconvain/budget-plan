@@ -91,7 +91,7 @@
           v-model="validFrom"
           name="validFrom"
           type="date"
-          class="block px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           placeholder="Válido desde" />
       </div>
       <div class="flex flex-col w-full">
@@ -196,6 +196,7 @@ const calculateDaysRemaining = (targetDate) => {
 
 onMounted(() => {
   onAuthStateChanged(auth, async (user) => {
+      isLoading.value = true;
     if (user) {
       goals.value = await fetchGoals();
       isLoading.value = false; // Desactivar estado de carga cuando todo esté cargado
