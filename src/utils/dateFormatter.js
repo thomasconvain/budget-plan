@@ -1,8 +1,8 @@
 export const formatDate = (timestamp) => {
   const date = timestamp.toDate(); // Convertir el Timestamp a Date
-  let day = date.getDate() +1;
-  let month = date.getMonth() + 1;
-  const year = date.getFullYear();
+  let day = date.getUTCDate();
+  let month = date.getUTCMonth() + 1;
+  const year = date.getUTCFullYear();
 
   if (day < 10) {
     day = '0' + day;
