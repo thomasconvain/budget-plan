@@ -35,7 +35,7 @@
                 <span class="absolute -inset-1.5" />
                 <span class="sr-only">Open user menu</span>
                 <img v-if="user?.photoURL" class="h-10 w-10 rounded-full" :src="user?.photoURL" alt="" />
-                <img class="h-10 w-10 rounded-full" src="../assets/img/default_profile.jpg" alt="" />
+                <img v-else class="h-10 w-10 rounded-full" src="../assets/img/default_profile.jpg" alt="" />
               </MenuButton>
             </div>
             <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-95">
