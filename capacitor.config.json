@@ -1,5 +1,12 @@
 {
   "appId": "com.budgetplanapp",
   "appName": "BudgetPlan",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "GoogleAuth": {
+      "scopes": ["profile", "email"],
+      "serverClientId": "450979548885-960oesblv9s5chtj7cue78apm8231him.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
+    }
+  }
 }

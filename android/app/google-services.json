@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "450979548885-6u1ffvk0l9sb6vcg86gra8nmvj26a41h.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.budgetplanapp",
+            "certificate_hash": "d4e789770636186bbbcc42b7fba3b0517385fc20"
+          }
+        },
+        {
           "client_id": "450979548885-960oesblv9s5chtj7cue78apm8231him.apps.googleusercontent.com",
           "client_type": 3
         }

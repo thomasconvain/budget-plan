@@ -23,6 +23,9 @@
             </intent-filter>
 
         </activity>
+        <!-- GoogleAuth Activity -->
+        <activity android:name="com.codetrixstudio.capacitor.GoogleAuth.GoogleAuth">
+        </activity>
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -38,4 +41,5 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 </manifest>

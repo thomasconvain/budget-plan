@@ -1,7 +1,9 @@
 import { createStore } from 'vuex';
-import { createUserWithEmailAndPassword, signInWithRedirect, GoogleAuthProvider, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithRedirect, signInWithCredential, GoogleAuthProvider, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
 import { auth, db } from '@/firebase';
+import { Capacitor } from '@capacitor/core';
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import router from '@/router'; 
 
 const store = createStore({
@@ -37,13 +39,27 @@ const store = createStore({
     },
     async signIn() {
       try {
-        const provider = new GoogleAuthProvider();
-        await signInWithRedirect(auth, provider);
-        // Después de redirigir, Firebase continuará la autenticación automáticamente
+        if (Capacitor.getPlatform() === 'android' || Capacitor.getPlatform() === 'ios')  {
+          console.log('Iniciando sesión con Google en Android...');
+          GoogleAuth.initialize({
+            clientId: '450979548885-960oesblv9s5chtj7cue78apm8231him.apps.googleusercontent.com',
+            scopes: ['profile', 'email'],
+            grantOfflineAccess: true,
+          });
+          const googleUser = await GoogleAuth.signIn();
+          console.log('Usuario de Google:', googleUser);
+          const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken);
+          await signInWithCredential(auth, credential);
+        } else {
+          console.log('Iniciando sesión con Google en la Web...');
+          const provider = new GoogleAuthProvider();
+          await signInWithRedirect(auth, provider);
+        }
+        router.push('/dashboard');
       } catch (error) {
         console.error('Error durante el inicio de sesión:', error);
       }
-    },
+    },    
     
     async signInWithEmail({ commit }, { email, password }) {
       try {
