@@ -45,7 +45,7 @@
         </button>
       </div>
       <div v-if="showCharts" class="w-100 mt-8 h-96"   >
-        <v-chart :option="options" />
+        <v-chart :option="chartOptions" />
       </div>
     </div>
 
@@ -130,11 +130,30 @@ const conversionRateUSDCLP = ref(0);
 const conversionRateUSDCOP = ref(0);
 const conversionRateCOPCLP = ref(0);
 const conversionRateCLPCOP = ref(0);
-const chartData = ref([]); // Almacenar datos del gráfico
 const showCharts = ref(false);
-const options = ref({
-  tooltip: {
-    trigger: chartData.value.name,
+const route = useRoute();
+const db = getFirestore();
+const auth = getAuth();
+const stats = computed(() => [
+  { id: 1, name: 'Total de gastos durante el periodo', value: formatNumber(totalPaymentsAmount.value.total - totalPaymentsAmount.value.negative) || 0 },
+  { id: 2, name: 'Total restante para gastar', value: formatNumber(availableTotalAmountForPeriod.value) || 0 },
+  { id: 3, name: 'Gasto diario promedio para cumplir con tu meta de ahorro', value: `${formatNumber(averageAvailableAmountPerDay.value)} /día` || 0 }
+]);
+const statsResume = computed(() => [
+  { id: 1, name: 'Total de gastos durante el periodo', value: formatNumber(totalPaymentsAmount.value.total - totalPaymentsAmount.value.negative) || 0 },
+  { id: 2, name: 'Lo que lograste ahorrar durante el periodo', value: formatNumber(availableTotalAmountForPeriod.value + goal.value.savingGoalAmount)|| 0 },
+]);
+
+const chartOptions = computed(() => {
+  const categories = Object.keys(totalPaymentsAmount.value.byCategory);
+  const data = categories.map(category => ({
+    value: Math.round(totalPaymentsAmount.value.byCategory[category]),
+    name: category
+  }));
+
+  return {
+    tooltip: {
+    trigger: data.name,
   },
   legend: {
     top: '0%',
@@ -157,28 +176,12 @@ const options = ref({
       labelLine: {
         show: false
       },
-      data: chartData.value, // Se asignan los datos dinámicamente
+      data: data, // Se asignan los datos dinámicamente
       color: ['#4f46e5', '#6c63f0', '#8981fa', '#a7a0ff', '#c4bfff', '#3d3ab3', '#312e8b', '#262366', '#1c1940', '#110e33'], // Tailwind colors
     },
   ],
+  };
 });
-const route = useRoute();
-const db = getFirestore();
-const auth = getAuth();
-const stats = computed(() => [
-  { id: 1, name: 'Total de gastos durante el periodo', value: formatNumber(totalPaymentsAmount.value.total - totalPaymentsAmount.value.negative) || 0 },
-  { id: 2, name: 'Total restante para gastar', value: formatNumber(availableTotalAmountForPeriod.value) || 0 },
-  { id: 3, name: 'Gasto diario promedio para cumplir con tu meta de ahorro', value: `${formatNumber(averageAvailableAmountPerDay.value)} /día` || 0 }
-]);
-const statsResume = computed(() => [
-  { id: 1, name: 'Total de gastos durante el periodo', value: formatNumber(totalPaymentsAmount.value.total - totalPaymentsAmount.value.negative) || 0 },
-  { id: 2, name: 'Lo que lograste ahorrar durante el periodo', value: formatNumber(availableTotalAmountForPeriod.value + goal.value.savingGoalAmount)|| 0 },
-]);
-
-// Función para actualizar los datos del gráfico
-const setChartData = (data) => {
-  options.value.series[0].data = data;
-};
 
 const calculateDaysRemaining = () => {
   const today = new Date();
@@ -223,29 +226,6 @@ const fetchPaymentsForGoal = async () => {
     const q = query(collection(db, 'payments'), where('goalId', '==', route.params.goalId), where('userId', '==', user.uid));
     const querySnapshot = await getDocs(q);
     payments.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    // Filtrar las categorías que no sean "Abono a cuenta"
-    const filteredPayments = payments.value.filter(payment => payment.category !== 'Abono a cuenta');
-
-    // Agrupar por categoría y sumar los amounts
-    const categorySums = filteredPayments.reduce((acc, payment) => {
-      const { category, amount } = payment;
-      if (!acc[category]) {
-        acc[category] = 0;
-      }
-      acc[category] += amount;
-      return acc;
-    }, {});
-
-    // Convertir el resultado en el formato que necesita ECharts
-    const chartData = Object.keys(categorySums).map(category => ({
-      name: category,
-      value: categorySums[category],
-    }));
-
-    // Asignar chartData al gráfico
-    setChartData(chartData);
-    
   } catch (error) {
     console.error('Error fetching payments for goal:', error);
   }
@@ -304,25 +284,42 @@ const totalPaymentsAmount = computed(() => {
     .filter(payment => payment.currency === goal.value.mainCurrency || payment.currency === undefined)
     .reduce((sum, payment) => sum + payment.amount, 0);
 
+  // Calculando los montos por categoría
+  const amountsByCategory = payments.value
+  .filter(payment => payment.category !== 'Abono a cuenta') // Excluyendo 'Abono a cuenta'
+  .reduce((acc, payment) => {
+    const category = payment.category || 'Unknown'; // Usa una categoría 'Unknown' si no tiene
+    const amountInMainCurrency = payment.currency === 'USD' ? payment.amount * conversionRateUSDCLP.value
+      : payment.currency === 'COP' ? payment.amount * conversionRateCOPCLP.value
+      : payment.amount;
+    
+    acc[category] = (acc[category] || 0) + amountInMainCurrency;
+    return acc;
+  }, {});
+
   if (goal.value.mainCurrency === 'CLP') {
     return {
       total: (totalUSD * conversionRateUSDCLP.value) + (totalCOP * conversionRateCOPCLP.value) + totalMainCurrency,
-      negative: negativePaymentsMainCurrency
+      negative: negativePaymentsMainCurrency,
+      byCategory: amountsByCategory
     };
   }
 
   if (goal.value.mainCurrency === 'COP') {
     return {
       total: (totalUSD * conversionRateUSDCOP.value) + (totalCLP * conversionRateCLPCOP.value) + totalMainCurrency,
-      negative: negativePaymentsMainCurrency
+      negative: negativePaymentsMainCurrency,
+      byCategory: amountsByCategory
     };
   }
 
   return {
     total: totalMainCurrency,
-    negative: negativePaymentsMainCurrency
+    negative: negativePaymentsMainCurrency,
+    byCategory: amountsByCategory
   };
 });
+
 
 
 const availableTotalAmountForPeriod = computed(() => {
