@@ -77,7 +77,9 @@
                 </div>
               </div>
               <div class="shrink-0 flex flex-col sm:flex-row sm:items-center items-end gap-2">
-                <p class="text-sm leading-6 text-gray-400">{{ payment.category }}</p>
+                <p class="text-sm leading-6 text-gray-400 flex items-center">
+                  <component :is="getIconComponent(payment.categoryIcon)" class="w-5 h-5 mr-3" />
+                  {{ payment.category }}</p>
                 <button @click="handleDeletePayment(payment.id)" class="ml-4 text-slate-300 hover:text-red-600"><TrashIcon class="h-4 w-4" aria-hidden="true" /></button>
               </div>
             </div>
@@ -103,6 +105,7 @@ import { CalendarIcon, InformationCircleIcon, TrashIcon, ArrowUpIcon, ArrowDownI
 import { use } from 'echarts/core';
 import { PieChart } from 'echarts/charts';
 import { CanvasRenderer } from 'echarts/renderers';
+import * as OutlineIcons from '@heroicons/vue/24/outline';
 import {
   TitleComponent,
   TooltipComponent,
@@ -134,6 +137,25 @@ const showCharts = ref(false);
 const route = useRoute();
 const db = getFirestore();
 const auth = getAuth();
+const getIconComponent = (iconName) => {
+  return iconMap[iconName] || null;
+};
+const iconMap = {
+  GlobeAmericasIcon: OutlineIcons.GlobeAmericasIcon,
+  HomeIcon : OutlineIcons.HomeIcon,
+  MapPinIcon : OutlineIcons.MapPinIcon,
+  FilmIcon : OutlineIcons.FilmIcon,
+  BuildingStorefrontIcon : OutlineIcons.BuildingStorefrontIcon,
+  ShoppingCartIcon : OutlineIcons.ShoppingCartIcon,
+  ShoppingBagIcon : OutlineIcons.ShoppingBagIcon,
+  BanknotesIcon : OutlineIcons.BanknotesIcon,
+  CurrencyDollarIcon : OutlineIcons.CurrencyDollarIcon,
+  LightBulbIcon : OutlineIcons.LightBulbIcon,
+  ComputerDesktopIcon : OutlineIcons.ComputerDesktopIcon,
+  HeartIcon : OutlineIcons.HeartIcon
+
+  // Agrega aquí todos los íconos que necesites
+};
 const stats = computed(() => [
   { id: 1, name: 'Total de gastos durante el periodo', value: formatNumber(totalPaymentsAmount.value.total - totalPaymentsAmount.value.negative) || 0 },
   { id: 2, name: 'Total restante para gastar', value: formatNumber(availableTotalAmountForPeriod.value) || 0 },
@@ -289,12 +311,23 @@ const totalPaymentsAmount = computed(() => {
   .filter(payment => payment.category !== 'Abono a cuenta') // Excluyendo 'Abono a cuenta'
   .reduce((acc, payment) => {
     const category = payment.category || 'Unknown'; // Usa una categoría 'Unknown' si no tiene
+    if (goal.value.mainCurrency === 'CLP') {
     const amountInMainCurrency = payment.currency === 'USD' ? payment.amount * conversionRateUSDCLP.value
       : payment.currency === 'COP' ? payment.amount * conversionRateCOPCLP.value
       : payment.amount;
     
     acc[category] = (acc[category] || 0) + amountInMainCurrency;
     return acc;
+    }
+
+    if (goal.value.mainCurrency === 'COP') {
+      const amountInMainCurrency = payment.currency === 'USD' ? payment.amount * conversionRateUSDCOP.value
+      : payment.currency === 'CLP' ? payment.amount * conversionRateCLPCOP.value
+      : payment.amount;
+    
+    acc[category] = (acc[category] || 0) + amountInMainCurrency;
+    return acc;
+    }
   }, {});
 
   if (goal.value.mainCurrency === 'CLP') {
