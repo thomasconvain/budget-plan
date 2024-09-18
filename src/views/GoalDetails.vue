@@ -105,12 +105,12 @@ const route = useRoute();
 const db = getFirestore();
 const auth = getAuth();
 const stats = computed(() => [
-  { id: 1, name: 'Total de gastos durante el periodo', value: formatNumber(totalPaymentsAmount.value) || 0 },
+  { id: 1, name: 'Total de gastos durante el periodo', value: formatNumber(totalPaymentsAmount.value.total - totalPaymentsAmount.value.negative) || 0 },
   { id: 2, name: 'Total restante para gastar', value: formatNumber(availableTotalAmountForPeriod.value) || 0 },
   { id: 3, name: 'Gasto diario promedio para cumplir con tu meta de ahorro', value: `${formatNumber(averageAvailableAmountPerDay.value)} /día` || 0 }
 ]);
 const statsResume = computed(() => [
-  { id: 1, name: 'Total de gastos durante el periodo', value: formatNumber(totalPaymentsAmount.value) || 0 },
+  { id: 1, name: 'Total de gastos durante el periodo', value: formatNumber(totalPaymentsAmount.value.total - totalPaymentsAmount.value.negative) || 0 },
   { id: 2, name: 'Lo que lograste ahorrar durante el periodo', value: formatNumber(availableTotalAmountForPeriod.value + goal.value.savingGoalAmount)|| 0 },
 ]);
 
@@ -194,30 +194,49 @@ const groupedPayments = computed(() => {
 const totalPaymentsAmount = computed(() => {
   const totalUSD = payments.value
     .filter(payment => payment.currency === 'USD')
-    .reduce((sum, payment) => sum + (payment.amount), 0);
+    .reduce((sum, payment) => sum + payment.amount, 0);
 
-    const totalCOP = payments.value
+  const totalCOP = payments.value
     .filter(payment => payment.currency === 'COP')
-    .reduce((sum, payment) => sum + (payment.amount), 0);
+    .reduce((sum, payment) => sum + payment.amount, 0);
 
-    const totalCLP = payments.value
+  const totalCLP = payments.value
     .filter(payment => payment.currency === 'CLP')
-    .reduce((sum, payment) => sum + (payment.amount), 0);
+    .reduce((sum, payment) => sum + payment.amount, 0);
 
+  // Filtrando payments con valores negativos para mainCurrency
+  const negativePaymentsMainCurrency = payments.value
+    .filter(payment => (payment.currency === goal.value.mainCurrency || payment.currency === undefined) && payment.amount < 0)
+    .reduce((sum, payment) => sum + payment.amount, 0);
+
+  // Calculando el totalMainCurrency normal sin filtrar por negativos
   const totalMainCurrency = payments.value
     .filter(payment => payment.currency === goal.value.mainCurrency || payment.currency === undefined)
     .reduce((sum, payment) => sum + payment.amount, 0);
+
   if (goal.value.mainCurrency === 'CLP') {
-    return (totalUSD * conversionRateUSDCLP.value) + (totalCOP * conversionRateCOPCLP.value) + totalMainCurrency;
+    return {
+      total: (totalUSD * conversionRateUSDCLP.value) + (totalCOP * conversionRateCOPCLP.value) + totalMainCurrency,
+      negative: negativePaymentsMainCurrency
+    };
   }
+
   if (goal.value.mainCurrency === 'COP') {
-    return (totalUSD * conversionRateUSDCOP.value) + (totalCLP * conversionRateCLPCOP.value) + totalMainCurrency;
+    return {
+      total: (totalUSD * conversionRateUSDCOP.value) + (totalCLP * conversionRateCLPCOP.value) + totalMainCurrency,
+      negative: negativePaymentsMainCurrency
+    };
   }
-  return totalMainCurrency
+
+  return {
+    total: totalMainCurrency,
+    negative: negativePaymentsMainCurrency
+  };
 });
 
+
 const availableTotalAmountForPeriod = computed(() => {
-  return goal.value.availableAmount - totalPaymentsAmount.value - goal.value.savingGoalAmount;
+  return goal.value.availableAmount - totalPaymentsAmount.value.total - goal.value.savingGoalAmount;
 });
 
 const averageAvailableAmountPerDay = computed(() => {
