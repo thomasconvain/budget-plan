@@ -57,7 +57,7 @@
       @paymentSaved="onPaymentSaved" />
 
     <div v-else class="my-6 flex flex-wrap gap-5 bg-indigo-50 text-sm text-indigo-400 p-5 rounded-lg">
-      <p>El periodo de tu objetivo ha terminado, por lo que ya no puedes ingresar nuevos movimientos. Puedes crear un nuevo objetivo para seguir monitoreando tus finanzas.</p>
+      <p>El periodo de tu presupuesto ha terminado, por lo que ya no puedes ingresar nuevos movimientos. Puedes crear un nuevo presupuesto para seguir monitoreando tus finanzas.</p>
     </div>
 
 
