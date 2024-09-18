@@ -3,7 +3,7 @@
     <LoadingSpinner />
   </div>
   <div v-else>
-    <h1 class="text-2xl font-semibold	mb-4">Tus metas</h1>
+    <h1 class="text-2xl font-semibold	mb-4">Tus presupuestos</h1>
     <div v-if="goals.length > 0" class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg">
       <ul role="list" class="divide-y divide-gray-200">
   <li v-for="goal in goals" :key="goal.id" class="flex items-center justify-between px-4 py-4 hover:bg-gray-50 rounded-lg">
@@ -15,7 +15,7 @@
       </div>
       <div class="text-right ml-auto">
         <p v-if="calculateDaysRemaining(goal.validUntil.toDate()) > 0" class="text-sm text-gray-500">Termina en {{calculateDaysRemaining(goal.validUntil.toDate()) }}  {{ calculateDaysRemaining(goal.validUntil.toDate()) <= 1 ? 'día' : 'días' }}</p>
-        <p v-else class="text-sm text-gray-500">Meta terminada</p>
+        <p v-else class="text-sm text-gray-500">Presupuesto terminado</p>
       </div>
     </router-link>
     <button @click="handleDeleteGoal(goal.id)" class="ml-4 text-slate-300 hover:text-red-600"><TrashIcon class="h-4 w-4" aria-hidden="true" /></button>
@@ -23,9 +23,9 @@
 </ul>
 
     </div>
-    <p v-else>No tienes metas registradas.</p>
+    <p v-else>No tienes presupuestos registrados.</p>
 
-    <h1 class="mt-6 text-2xl font-semibold	mb-4">Crear nueva meta</h1>
+    <h1 class="mt-6 text-2xl font-semibold	mb-4">Crear nuevo presupuesto</h1>
     <div class="my-1 flex gap-1 flex-wrap sm:flex-nowrap">
     <input 
       v-model="title"
@@ -106,7 +106,7 @@
     <button
       class="mt-4 relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg group hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
       @click="handleSaveGoal">
-        Crear meta
+        Crear presupuesto
     </button>
   </div>
 </template>
@@ -179,10 +179,10 @@ const handleDeleteGoal = async (goalId) => {
     });
     
     await batch.commit();
-    // Luego, elimina la meta
+    // Luego, elimina el presupuesto
     await deleteDoc(doc(db, 'goals', goalId));
 
-    // Actualizar la lista de metas después de eliminar
+    // Actualizar la lista de presupuestos después de eliminar
     goals.value = await fetchGoals();
   }
 };

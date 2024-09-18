@@ -209,10 +209,10 @@ const onPaymentSaved = () => {
 const handleDeletePayment = async (paymentId) => {
   const user = auth.currentUser;
   if (user) {
-    // Luego, elimina la meta
+    // Luego, elimina el presupuesto
     await deleteDoc(doc(db, 'payments', paymentId));
 
-    // Actualizar la lista de metas después de eliminar
+    // Actualizar la lista de presupuestos después de eliminar
     fetchPaymentsForGoal();
   }
 };
