@@ -22,9 +22,9 @@
       <p v-else class="flex gap-1 items-center"><InformationCircleIcon class="h-4 w-4" aria-hidden="true" /><strong>Meta terminada</strong></p>
     </div>
     
-    <div class="mt-6 bg-white shadow-lg rounded-2xl py-6 sm:py-12">
+    <div class="mt-6 bg-white shadow-lg rounded-2xl pt-6 sm:pt-12 flex flex-col justify-center">
       <div class="mx-auto max-w-7xl px-6 lg:px-8">
-        <dl v-if="daysRemaining >0" class="grid grid-cols-1 gap-x-8 gap-y-8 text-center lg:grid-cols-3">
+        <dl v-if="daysRemaining > 0" class="grid grid-cols-1 gap-x-8 gap-y-8 text-center lg:grid-cols-3">
           <div v-for="stat in stats" :key="stat.id" class="mx-auto flex max-w-xs flex-col gap-y-1">
             <dt class="text-base text-sm leading-5 text-gray-500">{{ stat.name }}</dt>
             <dd class="order-first text-xl font-semibold tracking-tight text-gray-900 sm:text-3xl">${{ stat.value }}</dd>
@@ -36,6 +36,16 @@
             <dd class="order-first text-xl font-semibold tracking-tight text-gray-900 sm:text-3xl">${{ stat.value }}</dd>
           </div>
         </dl>
+      </div>
+      <div class="my-6 grid lg:justify-items-end justify-items-center px-6 lg:px-8">
+        <button
+          class="px-4 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 border border-transparent rounded-lg  hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          @click="showCharts = !showCharts">
+            {{ showCharts ? 'Ocultar' : 'Ver' }} repartición de gastos
+        </button>
+      </div>
+      <div v-if="showCharts" class="w-100 mt-8 h-96"   >
+        <v-chart :option="options" />
       </div>
     </div>
 
@@ -80,7 +90,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, provide } from 'vue';
 import { getFirestore, doc, getDoc, collection, query, where, getDocs, deleteDoc, Timestamp } from 'firebase/firestore';
 import { useRoute } from 'vue-router';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -90,7 +100,26 @@ import {formatDate, formatDateToLargeString} from '../utils/dateFormatter.js'
 import { formatNumber } from '../utils/currencyFormatters.js';
 import { fetchConversionRate } from '../utils/currencyConverter.js';
 import { CalendarIcon, InformationCircleIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/vue/24/outline';
+import { use } from 'echarts/core';
+import { PieChart } from 'echarts/charts';
+import { CanvasRenderer } from 'echarts/renderers';
+import {
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+} from 'echarts/components';
+import VChart, { THEME_KEY } from 'vue-echarts';
 
+// ECharts necesita importar las capacidades de los gráficos y renderizado
+use([
+  CanvasRenderer,
+  PieChart,
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+]);
+
+provide(THEME_KEY, 'light');
 
 const goal = ref(null);
 const payments = ref([]);
@@ -101,6 +130,38 @@ const conversionRateUSDCLP = ref(0);
 const conversionRateUSDCOP = ref(0);
 const conversionRateCOPCLP = ref(0);
 const conversionRateCLPCOP = ref(0);
+const chartData = ref([]); // Almacenar datos del gráfico
+const showCharts = ref(false);
+const options = ref({
+  tooltip: {
+    trigger: chartData.value.name,
+  },
+  legend: {
+    top: '0%',
+    left: 'center'
+  },
+  series: [
+    {
+      name: 'Categoría',
+      type: 'pie',
+      radius: ['40%', '70%'],
+      avoidLabelOverlap: false,
+      padAngle: 5,
+      itemStyle: {
+        borderRadius: 10
+      },
+      label: {
+        show: false,
+        position: 'inner'
+      },
+      labelLine: {
+        show: false
+      },
+      data: chartData.value, // Se asignan los datos dinámicamente
+      color: ['#4f46e5', '#6c63f0', '#8981fa', '#a7a0ff', '#c4bfff', '#3d3ab3', '#312e8b', '#262366', '#1c1940', '#110e33'], // Tailwind colors
+    },
+  ],
+});
 const route = useRoute();
 const db = getFirestore();
 const auth = getAuth();
@@ -113,6 +174,11 @@ const statsResume = computed(() => [
   { id: 1, name: 'Total de gastos durante el periodo', value: formatNumber(totalPaymentsAmount.value.total - totalPaymentsAmount.value.negative) || 0 },
   { id: 2, name: 'Lo que lograste ahorrar durante el periodo', value: formatNumber(availableTotalAmountForPeriod.value + goal.value.savingGoalAmount)|| 0 },
 ]);
+
+// Función para actualizar los datos del gráfico
+const setChartData = (data) => {
+  options.value.series[0].data = data;
+};
 
 const calculateDaysRemaining = () => {
   const today = new Date();
@@ -157,10 +223,34 @@ const fetchPaymentsForGoal = async () => {
     const q = query(collection(db, 'payments'), where('goalId', '==', route.params.goalId), where('userId', '==', user.uid));
     const querySnapshot = await getDocs(q);
     payments.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Filtrar las categorías que no sean "Abono a cuenta"
+    const filteredPayments = payments.value.filter(payment => payment.category !== 'Abono a cuenta');
+
+    // Agrupar por categoría y sumar los amounts
+    const categorySums = filteredPayments.reduce((acc, payment) => {
+      const { category, amount } = payment;
+      if (!acc[category]) {
+        acc[category] = 0;
+      }
+      acc[category] += amount;
+      return acc;
+    }, {});
+
+    // Convertir el resultado en el formato que necesita ECharts
+    const chartData = Object.keys(categorySums).map(category => ({
+      name: category,
+      value: categorySums[category],
+    }));
+
+    // Asignar chartData al gráfico
+    setChartData(chartData);
+    
   } catch (error) {
     console.error('Error fetching payments for goal:', error);
   }
 };
+
 
 // Computed property para agrupar los pagos por fecha única y ordenar por fecha más reciente
 const groupedPayments = computed(() => {
