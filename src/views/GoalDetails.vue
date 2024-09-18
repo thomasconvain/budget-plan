@@ -18,13 +18,13 @@
       <p>Ingresos: <strong>${{ formatNumber(goal.availableAmount) }}</strong></p>
       <p>Meta de ahorro: <strong>${{ formatNumber(goal.savingGoalAmount) }}</strong></p>
       <p class="flex gap-1 items-center"><CalendarIcon class="h-4 w-4" aria-hidden="true" /> <strong>{{ formatDate(goal.validFrom) }}</strong>hasta<strong>{{ formatDate(goal.validUntil) }}</strong></p>
-      <p v-if="daysRemaining >= 0" class="flex gap-1 items-center"><InformationCircleIcon class="h-4 w-4" aria-hidden="true" /><strong>{{ daysRemaining }} días</strong> restantes</p>
+      <p v-if="daysRemaining > 0" class="flex gap-1 items-center"><InformationCircleIcon class="h-4 w-4" aria-hidden="true" /><strong>{{ daysRemaining }} días</strong> restantes</p>
       <p v-else class="flex gap-1 items-center"><InformationCircleIcon class="h-4 w-4" aria-hidden="true" /><strong>Meta terminada</strong></p>
     </div>
     
     <div class="mt-6 bg-white shadow-lg rounded-2xl py-6 sm:py-12">
       <div class="mx-auto max-w-7xl px-6 lg:px-8">
-        <dl v-if="daysRemaining >=0" class="grid grid-cols-1 gap-x-8 gap-y-8 text-center lg:grid-cols-3">
+        <dl v-if="daysRemaining >0" class="grid grid-cols-1 gap-x-8 gap-y-8 text-center lg:grid-cols-3">
           <div v-for="stat in stats" :key="stat.id" class="mx-auto flex max-w-xs flex-col gap-y-1">
             <dt class="text-base text-sm leading-5 text-gray-500">{{ stat.name }}</dt>
             <dd class="order-first text-xl font-semibold tracking-tight text-gray-900 sm:text-3xl">${{ stat.value }}</dd>
@@ -40,7 +40,7 @@
     </div>
 
     <UserPaymentsList
-      v-if="daysRemaining >= 0"
+      v-if="daysRemaining > 0"
       class="my-6"
       :selectedGoalId="route.params.goalId"
       :goalMainCurrency="goal.mainCurrency" 
