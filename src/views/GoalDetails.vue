@@ -76,10 +76,10 @@
                   <p v-if="payment.currency !== goal.mainCurrency" class="mt-1 truncate text-xs leading-5 text-gray-500">{{goal.mainCurrency}} {{ formatNumber(convertToMainCurrency(payment.amount, payment.currency, goal.mainCurrency)) }}</p>
                 </div>
               </div>
-              <div class="shrink-0 flex flex-col sm:flex-row sm:items-center items-end gap-2">
-                <p class="text-sm leading-6 text-gray-400 flex items-center">
-                  <component :is="getIconComponent(payment.categoryIcon)" class="w-5 h-5 mr-3" />
-                  {{ payment.category }}</p>
+              <div class="shrink-0 flex flex-row sm:items-center gap-2">
+                <p class="text-sm leading-6 text-gray-400 flex items-center gap-2 w-6 min-[480px]:w-44 overflow-visible">
+                  <component :is="getIconComponent(payment.categoryIcon)" class="min-w-4 h-4" />
+                  <span class="max-[480px]:hidden">{{ payment.category }}</span></p>
                 <button @click="handleDeletePayment(payment.id)" class="ml-4 text-slate-300 hover:text-red-600"><TrashIcon class="h-4 w-4" aria-hidden="true" /></button>
               </div>
             </div>
