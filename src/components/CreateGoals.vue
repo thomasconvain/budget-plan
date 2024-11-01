@@ -1,97 +1,86 @@
 <template>
-  <div v-if="isLoading">
-    <LoadingSpinner />
-  </div>
-  <div v-else>
-    <h1 class="text-2xl font-semibold	mb-4">Tus presupuestos</h1>
-    <div v-if="goals.length > 0" class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg">
-      <ul role="list" class="divide-y divide-gray-200">
-  <li v-for="goal in goals" :key="goal.id" class="flex items-center justify-between px-4 py-4 hover:bg-gray-50 rounded-lg">
-    <router-link :to="`/goal/${goal.id}`" class="flex items-center flex-1">
-      <CurrencyDollarIcon class="h-6 w-6" aria-hidden="true" />
-      <div class="ml-4">
-        <p class="text-sm font-medium text-gray-900">{{ goal.title }}</p>
-        <p class="text-sm text-gray-500">{{ goal.description }}</p>
-      </div>
-      <div class="text-right ml-auto">
-        <p v-if="calculateDaysRemaining(goal.validUntil.toDate()) > 0" class="text-sm text-gray-500">Termina en {{calculateDaysRemaining(goal.validUntil.toDate()) }}  {{ calculateDaysRemaining(goal.validUntil.toDate()) <= 1 ? 'día' : 'días' }}</p>
-        <p v-else class="text-sm text-gray-500">Presupuesto terminado</p>
-      </div>
-    </router-link>
-    <button @click="handleDeleteGoal(goal.id)" class="ml-4 text-slate-300 hover:text-red-600"><TrashIcon class="h-4 w-4" aria-hidden="true" /></button>
-  </li>
-</ul>
-
+  <div>
+    <div class="w-full flex justify-end">
+      <button
+        class="px-4 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 border border-transparent rounded-lg hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        @click="() => { $router.push({ name: 'Dashboard' }); }">
+          Volver
+      </button>
     </div>
-    <p v-else>No tienes presupuestos registrados.</p>
+    <h1 class="mt-6 text-2xl font-semibold mb-4">Tu nuevo presupuesto</h1>
 
-    <h1 class="mt-6 text-2xl font-semibold	mb-4">Crear nuevo presupuesto</h1>
-    <div class="my-1 flex gap-1 flex-wrap sm:flex-nowrap">
-    <input 
-      v-model="title"
-      type="text" 
-      class="my-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-      placeholder="Título" />
-    <input
-      v-model="description"
-      type="text"
-      class="my-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-      placeholder="Descripción" />
+    <!-- Etapa 1: Información básica -->
+    <div v-if="stage === 1" class="my-1 flex flex-col gap-1">
+      <input 
+        v-model="title"
+        type="text"
+        class="my-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        placeholder="Título" />
+      <input
+        v-model="description"
+        type="text"
+        class="my-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        placeholder="Descripción (opcional)" />
+      <div class="flex justify-end">
+        <button
+          @click="nextStage"
+          :disabled="!canProceedToNextStage"
+          class="mt-2 flex gap-2 items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400">
+          <ArrowRightIcon class="h-4 w-4" aria-hidden="true" />
+          Siguiente
+        </button>
+      </div>
     </div>
-    <div class="my-1 flex gap-1 flex-wrap sm:flex-nowrap">
+
+    <!-- Etapa 2: Configuración de moneda y montos -->
+    <div v-if="stage === 2" class="my-1 flex flex-col gap-1">
       <select
-          v-model="mainCurrency"
-          placeholder="Divisa principal"
-          class="block w-full sm:w-1/2 pl-2 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-          <option v-for="option in options" :key="option.value" :value="option.value" :disabled="option.disabled">
-            {{ option.text }}
-          </option>
+        v-model="mainCurrency"
+        class="block w-full pl-2 pr-3 py-2 my-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+        <option v-for="option in options" :key="option.value" :value="option.value" :disabled="option.disabled">
+          {{ option.text }}
+        </option>
       </select>
       <CurrencyInput
-        v-if="mainCurrency == 'CLP'"
+        v-if="mainCurrency == 'CLP' || mainCurrency == 'COP'"
         v-model="availableAmount"
-        class="w-full"
+        class="w-full my-1"
         placeholder="Ingresos"
         :showSelect="false"
-        :options="{ currency: 'CLP'
-         }"
+        :options="{ currency: mainCurrency }"
       />
       <CurrencyInput
-        v-if="mainCurrency == 'COP'"
-        v-model="availableAmount"
-        class="w-full"
-        placeholder="Ingresos"
-        :showSelect="false"
-        :options="{ currency: 'COP'
-         }"
-      />
-      <CurrencyInput
-        v-if="mainCurrency == 'CLP'"
+        v-if="mainCurrency == 'CLP' || mainCurrency == 'COP'"
         v-model="savingGoalAmount"
-        class="w-full"
+        class="w-full my-1"
         placeholder="Objetivo de ahorro"
         :showSelect="false"
-        :options="{ currency: 'CLP'
-         }"
+        :options="{ currency: mainCurrency }"
       />
-      <CurrencyInput
-        v-if="mainCurrency == 'COP'"
-        v-model="savingGoalAmount"
-        class="w-full"
-        placeholder="Objetivo de ahorro"
-        :showSelect="false"
-        :options="{ currency: 'COP'
-         }"
-      />
+      <div class="flex justify-between">
+        <button @click="previousStage" class="flex gap-2 items-center mt-2 text-indigo-600 hover:text-indigo-800">
+          <ArrowLeftIcon class="h-4 w-4" aria-hidden="true" />
+          Atrás
+        </button>
+        <button
+          @click="nextStage"
+          :disabled="!canProceedToNextStage"
+          class="flex gap-2 items-center mt-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400">
+          <ArrowRightIcon class="h-4 w-4" aria-hidden="true" />
+          Siguiente
+        </button>
+      </div>
     </div>
-    <div class="my-1 flex gap-1 flex-wrap sm:flex-nowrap">
+
+    <!-- Etapa 3: Fechas -->
+    <div v-if="stage === 3" class="my-1 flex flex-col gap-1">
       <div class="flex flex-col w-full">
         <label for="ValidFrom" class="block text-sm font-medium leading-6 text-gray-900">Fecha de inicio</label>
         <input
           v-model="validFrom"
           name="validFrom"
           type="date"
-          class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          class="block w-full px-3 py-2 my-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           placeholder="Válido desde" />
       </div>
       <div class="flex flex-col w-full">
@@ -99,48 +88,81 @@
         <input
           v-model="validUntil"
           type="date"
-          class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          class="block w-full my-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           placeholder="Válido hasta" />
       </div>
+      <div class="flex justify-between">
+        <button @click="previousStage" class="flex gap-2 items-center mt-2 text-indigo-600 hover:text-indigo-800">
+          <ArrowLeftIcon class="h-4 w-4" aria-hidden="true" />
+          Atrás
+        </button>
+        <button
+          @click="handleSaveGoal"
+          :disabled="!canSaveGoal"
+          class="mt-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400">
+          <svg v-if="isLoading" aria-hidden="true" role="status" class="inline w-4 h-4 me-3 text-white animate-spin" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="#E5E7EB"/>
+          <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentColor"/>
+          </svg>
+          Crear presupuesto
+        </button>
+      </div>
     </div>
-    <button
-      class="mt-4 relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg group hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      @click="handleSaveGoal">
-        Crear presupuesto
-    </button>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import CurrencyInput from './CurrencyInput.vue';
-import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, writeBatch, Timestamp } from 'firebase/firestore';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { CurrencyDollarIcon, TrashIcon } from '@heroicons/vue/24/outline';
-// import {formatDateToLargeString} from '../utils/dateFormatter.js'
-import {fetchGoals} from '../utils/business/goals.js'
+import { getFirestore, collection, addDoc, Timestamp } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { fetchGoals } from '../utils/business/goals.js';
+import { useRouter } from 'vue-router';
+import { ArrowRightIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline';
 
-const isLoading = ref('true')
+
+const router = useRouter();
+const goals = ref([]);
 const title = ref('');
 const description = ref('');
 const availableAmount = ref(null);
 const savingGoalAmount = ref(null);
-const mainCurrency = ref('CLP')
+const mainCurrency = ref('CLP');
 const validFrom = ref('');
 const validUntil = ref('');
-const goals = ref([]);
 const options = ref([
   { value: '', text: 'Selecciona la moneda principal', disabled: true },
   { value: 'CLP', text: 'Pesos Chilenos' },
   { value: 'COP', text: 'Pesos Colombianos' },
 ]);
+const isLoading = ref(false);
+
+const stage = ref(1);
+
+const canProceedToNextStage = computed(() => {
+  if (stage.value === 1) return title.value.trim() !== '';
+  if (stage.value === 2) return mainCurrency.value && availableAmount.value && savingGoalAmount.value;
+  if (stage.value === 3) return validFrom.value && validUntil.value;
+  return false;
+});
+
+const canSaveGoal = computed(() => canProceedToNextStage.value && stage.value === 3);
+
+const nextStage = () => {
+  if (canProceedToNextStage.value && stage.value < 3) stage.value++;
+};
+
+const previousStage = () => {
+  if (stage.value > 1) stage.value--;
+};
 
 const auth = getAuth();
 const db = getFirestore();
 
 const handleSaveGoal = async () => {
+  isLoading.value = true;
   const user = auth.currentUser;
-  if (user && title.value && savingGoalAmount.value && mainCurrency.value && validFrom.value && validUntil.value) {
+  if (user && canSaveGoal.value) {
     await addDoc(collection(db, 'goals'), {
       title: title.value,
       description: description.value,
@@ -152,56 +174,16 @@ const handleSaveGoal = async () => {
       validUntil: Timestamp.fromDate(new Date(validUntil.value)),
     });
 
-    // Actualizar la lista de goals después de agregar uno nuevo
     goals.value = await fetchGoals();
-
-    // Limpiar los campos del formulario
     title.value = '';
     description.value = '';
     availableAmount.value = '';
     savingGoalAmount.value = '';
     validFrom.value = '';
     validUntil.value = '';
+    stage.value = 1;
+
+    router.push('/dashboard');
   }
 };
-
-const handleDeleteGoal = async (goalId) => {
-  const user = auth.currentUser;
-  if (user) {
-    // Primero, elimina todos los pagos asociados a este goalId
-    const paymentsQuery = query(collection(db, 'payments'), where('goalId', '==', goalId), where('userId', '==', user.uid));
-    const paymentsSnapshot = await getDocs(paymentsQuery);
-    
-    const batch = writeBatch(db);
-    
-    paymentsSnapshot.forEach(doc => {
-      batch.delete(doc.ref);
-    });
-    
-    await batch.commit();
-    // Luego, elimina el presupuesto
-    await deleteDoc(doc(db, 'goals', goalId));
-
-    // Actualizar la lista de presupuestos después de eliminar
-    goals.value = await fetchGoals();
-  }
-};
-
-const calculateDaysRemaining = (targetDate) => {
-  const today = new Date();
-  const differenceInMillis = targetDate - today;
-  return Math.ceil(differenceInMillis / (1000 * 60 * 60 * 24));
-}
-
-onMounted(() => {
-  onAuthStateChanged(auth, async (user) => {
-      isLoading.value = true;
-    if (user) {
-      goals.value = await fetchGoals();
-      isLoading.value = false; // Desactivar estado de carga cuando todo esté cargado
-    }
-  });
-});
 </script>
-
-

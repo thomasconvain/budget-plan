@@ -4,7 +4,7 @@
     <div class="mb-24 z-50">
       <NavBar class="fixed w-full"/>
     </div>
-    <div class="px-10 pb-5 md:max-w-4xl m-auto">
+    <div class="px-10 pb-5 w-full md:max-w-4xl m-auto">
       <div v-if="loading">
         <LoadingSpinner />
       </div>

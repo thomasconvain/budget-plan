@@ -3,6 +3,7 @@ import Home from '../views/Home.vue';
 import { useStore } from 'vuex';
 import GoalDetails from '../views/GoalDetails.vue';
 import Dashboard from '@/views/Dashboard.vue';
+import CreateGoal from '@/views/CreateGoal.vue';
 
 const routes = [
   {
@@ -14,6 +15,14 @@ const routes = [
     path: '/dashboard',
     name: 'Dashboard',
     component: Dashboard,
+    meta: {
+      requiresAuth: true // Esta ruta requiere autenticación
+    }
+  },
+  {
+    path: '/create-goal',
+    name: 'CreateGoal',
+    component: CreateGoal,
     meta: {
       requiresAuth: true // Esta ruta requiere autenticación
     }
