@@ -1,5 +1,13 @@
 {
   "projects": {
     "default": "budget-plan-2c150"
+  },
+  "targets": {},
+  "etags": {
+    "budget-plan-2c150": {
+      "extensionInstances": {
+        "delete-user-data": "5127375c3156b5bf10522e6fc1ff5c2fa371527563013ff4aa35dd3037e776dc"
+      }
+    }
   }
 }

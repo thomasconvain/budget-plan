@@ -49,6 +49,9 @@
                 <MenuItem v-slot="{ active }">
                   <a @click="logout" :class="[active ? 'bg-gray-100 cursor-pointer' : '', 'block px-4 py-2 text-sm text-gray-700']">Salir</a>
                 </MenuItem>
+                <MenuItem v-slot="{ active }">
+                  <a @click="deleteUserData" :class="[active ? 'bg-gray-100 cursor-pointer' : '', 'block px-4 py-2 text-sm text-gray-700']">Eliminar mi cuenta</a>
+                </MenuItem>
               </MenuItems>
             </transition>
           </Menu>
@@ -70,14 +73,30 @@ import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuIt
 import { Bars3Icon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { useStore } from 'vuex';
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 const store = useStore();
 
 // Acceder al getter 'user' del store
 const user = computed(() => store.getters.user);
 
+const router = useRouter();
+
 // Acceder solo a la acción de logout
 const logout = () => store.dispatch('logout');
+
+const deleteUserData = async () => {
+  try {
+    if (user.value) {
+      // Elimina el usuario de Firebase Authentication
+      await user.value.delete();
+      router.push('/');
+      alert("Tu cuenta y datos han sido eliminados.");
+    }
+  } catch (error) {
+    console.error("Error al eliminar el usuario y sus datos:", error);
+  }
+};
 
 const navigation = [
   // { name: 'Dashboard', href: '#', current: true },
