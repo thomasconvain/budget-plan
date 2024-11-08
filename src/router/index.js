@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from '../views/Home.vue';
+import PrivacyPolicy from '../views/PrivacyPolicy.vue';
 import { useStore } from 'vuex';
 import GoalDetails from '../views/GoalDetails.vue';
 import Dashboard from '@/views/Dashboard.vue';
@@ -10,6 +11,11 @@ const routes = [
     path: '/',
     name: 'Home',
     component: Home,
+  },
+  {
+    path: '/privacy',
+    name: 'Privacy',
+    component: PrivacyPolicy,
   },
   {
     path: '/dashboard',
