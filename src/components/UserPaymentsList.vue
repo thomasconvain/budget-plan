@@ -178,6 +178,7 @@ const handleSavePayment = async () => {
       userId: user.uid,
       amount: -Math.abs(parseFloat(amount.value)),
       category: category.value.name,
+      categoryIcon: category.value.icon,
       goalId: props.selectedGoalId,
       date: currentDate, // Añadir la fecha actual al payment,
       currency: currency.value,
