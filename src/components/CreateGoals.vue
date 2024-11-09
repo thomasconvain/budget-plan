@@ -133,6 +133,7 @@
           v-model="validFrom"
           name="validFrom"
           type="date"
+          :min="today"
           class="block w-full px-3 py-2 my-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           placeholder="Válido desde" />
       </div>
@@ -140,6 +141,7 @@
         <label for="ValidUntil" class="block text-sm font-medium leading-6 text-gray-900">Fecha de termino</label>
         <input
           v-model="validUntil"
+          :min="validFrom"
           type="date"
           class="block w-full my-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           placeholder="Válido hasta" />
@@ -183,7 +185,8 @@ const availableAmount = ref(null);
 const savingGoalAmount = ref(null);
 const savingDisabled = ref(false);
 const mainCurrency = ref('CLP');
-const validFrom = ref('');
+const today = new Date().toISOString().split('T')[0];
+const validFrom = ref(today);
 const validUntil = ref('');
 const options = ref([
   { value: 'CLP', text: 'Pesos Chilenos', countryCode: 'CL' },
