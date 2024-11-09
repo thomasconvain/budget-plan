@@ -34,15 +34,40 @@
 
     <!-- Etapa 2: Configuración de moneda y montos -->
     <div v-if="stage === 2" class="my-1 flex flex-col gap-1">
-      <select
+      <!-- <select
         v-model="mainCurrency"
         class="block w-full pl-2 pr-3 py-2 my-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
         <option v-for="option in options" :key="option.value" :value="option.value" :disabled="option.disabled">
           {{ option.text }}
         </option>
-      </select>
+      </select> -->
+      <div>
+        <p class="text-sm/6 text-gray-600">Elige la moneda principal de tu objetivo:</p>
+      </div>
+      <div class="flex sm:flex-row flex-col gap-2">
+        <button
+          v-for="option in options"
+          :key="option.value"
+          :class="[
+            'flex items-center px-4 py-2 border rounded-lg transition',
+            mainCurrency === option.value
+              ? 'bg-indigo-500 text-white'
+              : 'bg-gray-200 text-gray-700',
+            'hover:bg-indigo-300 hover:text-white'
+          ]"
+          @click="selectCurrency(option.value)"
+          :disabled="option.disabled"
+        >
+          <country-flag
+            :country="option.countryCode"
+            rounded
+            class=""
+          />
+          {{ option.text }}
+        </button>
+      </div>
       <CurrencyInput
-        v-if="mainCurrency == 'CLP' || mainCurrency == 'COP'"
+        v-if="mainCurrency == 'CLP'"
         v-model="availableAmount"
         class="w-full my-1"
         placeholder="Ingresos"
@@ -50,13 +75,41 @@
         :options="{ currency: mainCurrency }"
       />
       <CurrencyInput
-        v-if="mainCurrency == 'CLP' || mainCurrency == 'COP'"
-        v-model="savingGoalAmount"
+        v-if="mainCurrency == 'COP'"
+        v-model="availableAmount"
         class="w-full my-1"
-        placeholder="Objetivo de ahorro"
+        placeholder="Ingresos"
         :showSelect="false"
         :options="{ currency: mainCurrency }"
       />
+      <p class="mb-3 text-sm/6 text-gray-400 italic">Indica el monto que tendrás disponible durante el periodo</p>
+      <CurrencyInput
+        v-if="mainCurrency == 'CLP' && !savingDisabled"
+        v-model="savingGoalAmount"
+        :disabled="savingDisabled"
+        class="w-full my-1"
+        placeholder="Meta de ahorro"
+        :showSelect="false"
+        :options="{ currency: mainCurrency }"
+      />
+      <CurrencyInput
+        v-if="mainCurrency == 'COP' && !savingDisabled"
+        v-model="savingGoalAmount"
+        :disabled="savingDisabled"
+        class="w-full my-1"
+        placeholder="Meta de ahorro"
+        :showSelect="false"
+        :options="{ currency: mainCurrency }"
+      />
+      <p v-if="!savingDisabled" class="mb-3 text-sm/6 text-gray-400 italic">Indica el monto que esperas ahorrar durante el periodo.</p>
+      <div class="relative flex gap-x-3">
+        <div class="flex h-6 items-center">
+          <input @change="savingGoalAmount = 0, savingDisabled = !savingDisabled" id="candidates" name="candidates" type="checkbox" :checked="savingDisabled" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+        </div>
+        <div class="text-sm/6">
+          <label for="candidates" class="font-medium text-gray-900">Prefiero no ahorrar para este presupuesto</label>
+        </div>
+      </div>
       <div class="flex justify-between">
         <button @click="previousStage" class="flex gap-2 items-center mt-2 text-indigo-600 hover:text-indigo-800">
           <ArrowLeftIcon class="h-4 w-4" aria-hidden="true" />
@@ -119,6 +172,7 @@ import { getAuth } from 'firebase/auth';
 import { fetchGoals } from '../utils/business/goals.js';
 import { useRouter } from 'vue-router';
 import { ArrowRightIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline';
+import CountryFlag from 'vue-country-flag-next';
 
 
 const router = useRouter();
@@ -127,13 +181,13 @@ const title = ref('');
 const description = ref('');
 const availableAmount = ref(null);
 const savingGoalAmount = ref(null);
+const savingDisabled = ref(false);
 const mainCurrency = ref('CLP');
 const validFrom = ref('');
 const validUntil = ref('');
 const options = ref([
-  { value: '', text: 'Selecciona la moneda principal', disabled: true },
-  { value: 'CLP', text: 'Pesos Chilenos' },
-  { value: 'COP', text: 'Pesos Colombianos' },
+  { value: 'CLP', text: 'Pesos Chilenos', countryCode: 'CL' },
+  { value: 'COP', text: 'Pesos Colombianos', countryCode: 'CO' },
 ]);
 const isLoading = ref(false);
 
@@ -141,12 +195,16 @@ const stage = ref(1);
 
 const canProceedToNextStage = computed(() => {
   if (stage.value === 1) return title.value.trim() !== '';
-  if (stage.value === 2) return mainCurrency.value && availableAmount.value && savingGoalAmount.value;
+  if (stage.value === 2) return mainCurrency.value && availableAmount.value && (savingGoalAmount.value || savingDisabled.value);
   if (stage.value === 3) return validFrom.value && validUntil.value;
   return false;
 });
 
 const canSaveGoal = computed(() => canProceedToNextStage.value && stage.value === 3);
+
+function selectCurrency(value) {
+  mainCurrency.value = value;
+}
 
 const nextStage = () => {
   if (canProceedToNextStage.value && stage.value < 3) stage.value++;
@@ -187,3 +245,10 @@ const handleSaveGoal = async () => {
   }
 };
 </script>
+
+<style>
+.normal-flag {
+  margin: 0 !important;
+  margin-left: -0.7rem !important;
+}
+</style>
