@@ -25,5 +25,5 @@ export const formatNumber = (value) => {
   if (isNaN(num)) return '';
 
   // Formatear el número con puntos cada 3 dígitos
-  return num.toLocaleString('es-CL', { maximumFractionDigits: 2 });
+  return num.toLocaleString('es-CL', { maximumFractionDigits: 0 });
 };

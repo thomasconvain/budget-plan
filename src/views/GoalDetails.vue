@@ -3,51 +3,63 @@
     <LoadingSpinner />
   </div>
   <div v-else>
+    <div class="w-full flex justify-end">
+      <button
+          class="px-4 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 border border-transparent rounded-lg  hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          @click="() => { $router.push({ name: 'Dashboard' }); }">
+            Volver
+        </button>
+    </div>
     <div class="mt-6 flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-semibold">🚀 {{ goal.title }} <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">{{ goal.mainCurrency }}</span></h1>
-        <p class="text-sm ml-9 text-slate-400">{{ goal.description }}</p>
+        <p class="h-[20px] text-sm ml-9 text-slate-400">{{ goal.description }}</p>
       </div>
-      <button
-        class="px-4 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 border border-transparent rounded-lg  hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        @click="() => { $router.push({ name: 'Dashboard' }); }">
-          Volver
-      </button>
     </div>
-    <div class="my-6 flex flex-wrap gap-5 bg-indigo-200 text-sm text-indigo-700 p-5 rounded-lg">
-      <p>Ingresos: <strong>${{ formatNumber(goal.availableAmount) }}</strong></p>
-      <p>Meta de ahorro: <strong>${{ formatNumber(goal.savingGoalAmount) }}</strong></p>
-      <p class="flex gap-1 items-center"><CalendarIcon class="h-4 w-4" aria-hidden="true" /> <strong>{{ formatDate(goal.validFrom) }}</strong>hasta<strong>{{ formatDate(goal.validUntil) }}</strong></p>
-      <p v-if="daysRemaining > 0" class="flex gap-1 items-center"><InformationCircleIcon class="h-4 w-4" aria-hidden="true" /><strong>{{ daysRemaining }} días</strong> restantes</p>
-      <p v-else class="flex gap-1 items-center"><InformationCircleIcon class="h-4 w-4" aria-hidden="true" /><strong>Meta terminada</strong></p>
-    </div>
-    
-    <div class="mt-6 bg-white shadow-lg rounded-2xl pt-6 sm:pt-12 flex flex-col justify-center">
-      <div class="mx-auto max-w-7xl px-6 lg:px-8">
-        <dl v-if="daysRemaining > 0" class="grid grid-cols-1 gap-x-8 gap-y-8 text-center lg:grid-cols-3">
-          <div v-for="stat in stats" :key="stat.id" class="mx-auto flex max-w-xs flex-col gap-y-1">
-            <dt class="text-base text-sm leading-5 text-gray-500">{{ stat.name }}</dt>
-            <dd class="order-first text-xl font-semibold tracking-tight text-gray-900 sm:text-3xl">${{ stat.value }}</dd>
-          </div>
-        </dl>
-        <dl v-else class="grid grid-cols-1 gap-x-8 gap-y-8 text-center lg:grid-cols-2">
-          <div v-for="stat in statsResume" :key="stat.id" class="mx-auto flex max-w-xs flex-col gap-y-1">
-            <dt class="text-base text-sm leading-5 text-gray-500">{{ stat.name }}</dt>
-            <dd class="order-first text-xl font-semibold tracking-tight text-gray-900 sm:text-3xl">${{ stat.value }}</dd>
-          </div>
-        </dl>
+    <div class="mt-2 mb-8 pb-2 flex flex-nowrap gap-1 overflow-auto scrollbar-hide">
+      <div class="min-w-fit	inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-800">
+        Ingresos<strong class="ml-1 text-indigo-700"> ${{ formatNumber(goal.availableAmount) }}</strong>
       </div>
-      <div class="my-6 grid lg:justify-items-end justify-items-center px-6 lg:px-8">
+      <div v-if="goal.savingGoalAmount > 0" class="min-w-fit	inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-800">
+        Meta de ahorro<strong class="ml-1 text-indigo-700"> ${{ formatNumber(goal.savingGoalAmount) }}</strong>
+      </div>
+      <div class="min-w-fit	inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-800">
+        <p class="flex gap-1 items-center"><CalendarIcon class="h-4 w-4" aria-hidden="true" /> <strong class="text-indigo-700">{{ formatDate(goal.validFrom) }}</strong>hasta<strong class="text-indigo-700">{{ formatDate(goal.validUntil) }}</strong></p>
+      </div>
+      <div class="min-w-fit	inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-800">
+        <p v-if="daysRemaining > 0" class="flex gap-1 items-center"><InformationCircleIcon class="h-4 w-4" aria-hidden="true" /><strong class="text-indigo-700">{{ daysRemaining }} días</strong> restantes</p>
+        <p v-else class="flex gap-1 items-center"><InformationCircleIcon class="h-4 w-4" aria-hidden="true" /><strong class="text-indigo-700">Meta terminada</strong></p>
+      </div>
+      <div class="absolute top-[214px] right-[39px] h-8 w-16 bg-gradient-to-l from-gray-50 to-transparent pointer-events-none"></div>
+    </div>
+
+    <div class="text-indigo-950">
+      <div v-if="daysRemaining > 0" class="grid grid-cols-1 lg:grid-cols-3 gap-1">
+        <div v-for="(stat, i) in stats" :key="stat.id" class="flex flex-col items-center text-center p-4 bg-gray-100" :class="i == (stats.length -1) ? 'responsive-rounded-r' : i == 0 ? 'responsive-rounded-l' : ''">
+          <span class="text-2xl font-bold">${{ stat.value }}</span>
+          <span class="text-sm text-indigo-700">{{ stat.name }}</span>
+        </div>
+      </div>
+      <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-1">
+        <div v-for="(stat, i) in statsResume" :key="stat.id" class="flex flex-col items-center text-center p-4 bg-gray-100" :class="i == (statsResume.length -1) ? 'responsive-rounded-r' : i == 0 ? 'responsive-rounded-l' : ''">
+          <span class="text-2xl font-bold">${{ stat.value }}</span>
+          <span class="text-sm text-indigo-700">{{ stat.name }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="my-6 grid lg:justify-items-end justify-items-center">
         <button
-          class="px-4 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 border border-transparent rounded-lg  hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          class="flex gap-1 px-4 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 border border-transparent rounded-lg  hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           @click="showCharts = !showCharts">
+            <ChartPieIcon class="h-4 w-4" aria-hidden="true" />
             {{ showCharts ? 'Ocultar' : 'Ver' }} repartición de gastos
         </button>
       </div>
       <div v-if="showCharts" class="w-100 mt-8 h-96"   >
         <v-chart :option="chartOptions" />
       </div>
-    </div>
+
 
     <UserPaymentsList
       v-if="daysRemaining > 0"
@@ -101,7 +113,7 @@ import LoadingSpinner from '../components/LoadingSpinner.vue'
 import {formatDate, formatDateToLargeString} from '../utils/dateFormatter.js'
 import { formatNumber } from '../utils/currencyFormatters.js';
 import { fetchConversionRate } from '../utils/currencyConverter.js';
-import { CalendarIcon, InformationCircleIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/vue/24/outline';
+import { CalendarIcon, InformationCircleIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, ChartPieIcon } from '@heroicons/vue/24/outline';
 import { use } from 'echarts/core';
 import { PieChart } from 'echarts/charts';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -400,4 +412,49 @@ onMounted(async () => {
   });
 });
 </script>
+
+<style>
+.responsive-rounded-r {
+  border-top-right-radius: 0.75rem;
+  border-bottom-right-radius: 0.75rem;
+}
+
+.responsive-rounded-l {
+  border-top-left-radius: 0.75rem;
+  border-bottom-left-radius: 0.75rem;
+}
+
+/* Personalización de la barra de desplazamiento */
+.scrollbar-hide::-webkit-scrollbar {
+  height: 8px;
+}
+
+.scrollbar-hide::-webkit-scrollbar-track {
+  background: #f0f0f0; /* Color de fondo de la pista */
+  border-radius: 4px;
+}
+
+.scrollbar-hide::-webkit-scrollbar-thumb {
+  background-color: #dcdcdc; /* Color del pulgar */
+  border-radius: 4px;
+  border: 2px solid #e2e8f0; /* Espacio alrededor del pulgar */
+}
+
+.scrollbar-hide::-webkit-scrollbar-thumb:hover {
+  background-color: #7585a1; /* Color al pasar el mouse */
+}
+
+@media (max-width: 1023px ) {
+  .responsive-rounded-r {
+    border-top-right-radius: 0rem;
+    border-bottom-right-radius: 0.75rem;
+    border-bottom-left-radius: 0.75rem;
+  }
+  .responsive-rounded-l {
+    border-top-right-radius: 0.75rem;
+    border-top-left-radius: 0.75rem;
+    border-bottom-left-radius: 0rem;
+  }
+}
+</style>
 

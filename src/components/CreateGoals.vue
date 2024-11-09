@@ -133,7 +133,6 @@
           v-model="validFrom"
           name="validFrom"
           type="date"
-          :min="today"
           class="block w-full px-3 py-2 my-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           placeholder="Válido desde" />
       </div>
