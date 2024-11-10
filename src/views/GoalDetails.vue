@@ -3,7 +3,7 @@
     <LoadingSpinner />
   </div>
   <div v-else>
-    <div class="w-full flex justify-end">
+    <div v-if="!isNativeApp" class="w-full flex justify-end">
       <button
           class="px-4 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 border border-transparent rounded-lg  hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           @click="() => { $router.push({ name: 'Dashboard' }); }">
@@ -124,6 +124,7 @@ import {
   LegendComponent,
 } from 'echarts/components';
 import VChart, { THEME_KEY } from 'vue-echarts';
+import { Capacitor } from '@capacitor/core';
 
 // ECharts necesita importar las capacidades de los gráficos y renderizado
 use([
@@ -136,6 +137,7 @@ use([
 
 provide(THEME_KEY, 'light');
 
+const isNativeApp = Capacitor.isNativePlatform();
 const goal = ref(null);
 const payments = ref([]);
 const isLoading = ref(true);
