@@ -2,7 +2,7 @@
 
   <div class="flex flex-col bg-gray-50 min-h-screen">
     <div class="mb-24 z-50">
-      <NavBar v-if="!isNativeApp" class="fixed w-full"/>
+      <NavBar class="fixed w-full"/>
     </div>
     <div class="px-10 pb-5 w-full md:max-w-4xl m-auto">
       <div v-if="loading">

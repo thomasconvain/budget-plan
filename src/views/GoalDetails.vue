@@ -30,7 +30,7 @@
         <p v-if="daysRemaining > 0" class="flex gap-1 items-center"><InformationCircleIcon class="h-4 w-4" aria-hidden="true" /><strong class="text-indigo-700">{{ daysRemaining }} días</strong> restantes</p>
         <p v-else class="flex gap-1 items-center"><InformationCircleIcon class="h-4 w-4" aria-hidden="true" /><strong class="text-indigo-700">Meta terminada</strong></p>
       </div>
-      <div class="absolute top-[214px] right-[39px] h-8 w-16 bg-gradient-to-l from-gray-50 to-transparent pointer-events-none"></div>
+      <div :class="isNativeApp ? 'top-[179px]' : 'top-[214px]'" class="absolute right-[39px] h-8 w-16 bg-gradient-to-l from-gray-50 to-transparent pointer-events-none"></div>
     </div>
 
     <div class="text-indigo-950">
