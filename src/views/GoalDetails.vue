@@ -16,7 +16,7 @@
         <p class="h-[20px] text-sm ml-9 text-slate-400">{{ goal.description }}</p>
       </div>
     </div>
-    <div class="mt-2 mb-8 pb-2 flex flex-nowrap gap-1 overflow-auto scrollbar-hide">
+    <div class="absolute md:relative md:mt-2 md:mb-6 inset-x-0 pt-4 px-8 md:px-0 md:pt-0 pb-2 flex flex-nowrap gap-1 overflow-auto scrollbar-hide">
       <div class="min-w-fit	inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-800">
         Ingresos<strong class="ml-1 text-indigo-700"> ${{ formatNumber(goal.availableAmount) }}</strong>
       </div>
@@ -30,10 +30,9 @@
         <p v-if="daysRemaining > 0" class="flex gap-1 items-center"><InformationCircleIcon class="h-4 w-4" aria-hidden="true" /><strong class="text-indigo-700">{{ daysRemaining }} días</strong> restantes</p>
         <p v-else class="flex gap-1 items-center"><InformationCircleIcon class="h-4 w-4" aria-hidden="true" /><strong class="text-indigo-700">Meta terminada</strong></p>
       </div>
-      <div :class="isNativeApp ? 'top-[179px]' : 'top-[214px]'" class="absolute right-[39px] h-8 w-16 bg-gradient-to-l from-gray-50 to-transparent pointer-events-none"></div>
     </div>
 
-    <div class="text-indigo-950">
+    <div class="mt-20 md:mt-0 text-indigo-950">
       <div v-if="daysRemaining > 0" class="grid grid-cols-1 lg:grid-cols-3 gap-1">
         <div v-for="(stat, i) in stats" :key="stat.id" class="flex flex-col items-center text-center p-4 bg-gray-100" :class="i == (stats.length -1) ? 'responsive-rounded-r' : i == 0 ? 'responsive-rounded-l' : ''">
           <span class="text-2xl font-bold">${{ stat.value }}</span>
@@ -428,22 +427,24 @@ onMounted(async () => {
 
 /* Personalización de la barra de desplazamiento */
 .scrollbar-hide::-webkit-scrollbar {
-  height: 8px;
+  height: 3px;
+  width: 50% !important;
 }
 
 .scrollbar-hide::-webkit-scrollbar-track {
-  background: #f0f0f0; /* Color de fondo de la pista */
+  background: #f0f0f000; /* Color de fondo de la pista */
   border-radius: 4px;
 }
 
 .scrollbar-hide::-webkit-scrollbar-thumb {
   background-color: #dcdcdc; /* Color del pulgar */
-  border-radius: 4px;
-  border: 2px solid #e2e8f0; /* Espacio alrededor del pulgar */
+  border-radius: 400px;
+  border-left: 2.5rem solid #f9fafb; /* Espacio alrededor del pulgar */
+  border-right: 2.5rem solid #f9fafb; /* Espacio alrededor del pulgar */
 }
 
 .scrollbar-hide::-webkit-scrollbar-thumb:hover {
-  background-color: #7585a1; /* Color al pasar el mouse */
+  background-color: #b8b8b8; /* Color al pasar el mouse */
 }
 
 @media (max-width: 1023px ) {
