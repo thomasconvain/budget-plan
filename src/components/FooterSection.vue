@@ -9,7 +9,7 @@
         </a>
       </div>
       <div class="flex w-full mt-8 md:mt-0 md:order-1 items-center gap-4 lg:justify-between flex-wrap justify-center">
-        <p class="text-center text-base text-gray-400">&copy; 2024 Desarrollado por Thomas Convain para BudgetPlan. Todos los derechos reservados.</p>
+        <p class="text-center text-base text-gray-400">&copy; 2025 Desarrollado por Thomas Convain para BudgetPlan. Todos los derechos reservados.</p>
         <a href="https://www.buymeacoffee.com/thomascconvain" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="width: 125px !important;" ></a>
       </div>
     </div>
