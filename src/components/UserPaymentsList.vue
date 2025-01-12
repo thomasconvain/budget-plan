@@ -169,7 +169,7 @@ const handleSavePayment = async () => {
     });
 
     // Emitir el evento al componente padre en lugar de llamar a fetchPaymentsForGoal
-    emit('paymentSaved');
+    emit('paymentSaved', amount.value, currency.value);
 
     // Limpiar los campos
     amount.value = '';
@@ -185,7 +185,7 @@ const handleSavePayment = async () => {
     });
 
     // Emitir el evento al componente padre en lugar de llamar a fetchPaymentsForGoal
-    emit('paymentSaved');
+    emit('paymentSaved', amount.value, currency.value);
 
     // Limpiar los campos
     amount.value = '';

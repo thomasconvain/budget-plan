@@ -9,42 +9,40 @@
           @click="() => { $router.push({ name: 'Dashboard' }); }">
             Volver
         </button>
-    </div>
+    </div>{{ goal._id }}
     <div class="mt-6 flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-semibold">🚀 {{ goal.title }} <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">{{ goal.mainCurrency }}</span></h1>
-        <p class="h-[20px] text-sm ml-9 text-slate-400">{{ goal.description }}</p>
+        <h1 class="text-2xl font-semibold">🚀 {{ goal.type }} <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">{{ goal.mainCurrency }}</span></h1>
+        <p class="h-[20px] text-sm ml-9 text-slate-400">{{ goal.title }}</p>
       </div>
     </div>
     <div class="absolute md:relative md:mt-2 md:mb-6 inset-x-0 pt-4 px-8 md:px-0 md:pt-0 pb-2 flex flex-nowrap gap-1 overflow-auto scrollbar-hide">
-      <div class="min-w-fit	inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-800">
-        Ingresos<strong class="ml-1 text-indigo-700"> ${{ formatNumber(goal.availableAmount) }}</strong>
+      <div v-if="goal.type === 'Tarjeta de crédito'" class="min-w-fit	inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-800">
+        Cupo de pago<strong class="ml-1 text-indigo-700"> ${{ formatNumber(goal.availableAmount, goal.mainCurrency) }}</strong>
       </div>
-      <div v-if="goal.savingGoalAmount > 0" class="min-w-fit	inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-800">
-        Meta de ahorro<strong class="ml-1 text-indigo-700"> ${{ formatNumber(goal.savingGoalAmount) }}</strong>
-      </div>
-      <div class="min-w-fit	inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-800">
+      <div v-if="goal.validUntil !== null" class="min-w-fit	inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-800">
         <p class="flex gap-1 items-center"><CalendarIcon class="h-4 w-4" aria-hidden="true" /> <strong class="text-indigo-700">{{ formatDate(goal.validFrom) }}</strong>hasta<strong class="text-indigo-700">{{ formatDate(goal.validUntil) }}</strong></p>
       </div>
       <div class="min-w-fit	inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-800">
         <p v-if="daysRemaining > 0" class="flex gap-1 items-center"><InformationCircleIcon class="h-4 w-4" aria-hidden="true" /><strong class="text-indigo-700">{{ daysRemaining }} días</strong> restantes</p>
-        <p v-else class="flex gap-1 items-center"><InformationCircleIcon class="h-4 w-4" aria-hidden="true" /><strong class="text-indigo-700">Meta terminada</strong></p>
+        <p v-else-if="goal.validUntil !== null" class="flex gap-1 items-center"><InformationCircleIcon class="h-4 w-4" aria-hidden="true" /><strong class="text-indigo-700">Meta terminada</strong></p>
+        <p v-else class="flex gap-1 items-center"><InformationCircleIcon class="h-4 w-4" aria-hidden="true" /><strong class="text-indigo-700">Sin fecha de término</strong></p>
       </div>
     </div>
 
     <div class="mt-20 md:mt-0 text-indigo-950">
-      <div v-if="daysRemaining > 0" class="grid grid-cols-1 lg:grid-cols-3 gap-1">
-        <div v-for="(stat, i) in stats" :key="stat.id" class="flex flex-col items-center text-center p-4 bg-gray-100" :class="i == (stats.length -1) ? 'responsive-rounded-r' : i == 0 ? 'responsive-rounded-l' : ''">
+      <div class="grid grid-cols-1 gap-1" :class="`lg:grid-cols-${enabledStats.length}`">
+        <div v-for="(stat, i) in enabledStats" :key="stat.id" class="flex flex-col items-center text-center p-4 bg-gray-100" :class="i == (stats.length -1) ? 'responsive-rounded-r' : i == 0 ? 'responsive-rounded-l' : ''">
           <span class="text-2xl font-bold">${{ stat.value }}</span>
           <span class="text-sm text-indigo-700">{{ stat.name }}</span>
         </div>
       </div>
-      <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-1">
+      <!-- <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-1">
         <div v-for="(stat, i) in statsResume" :key="stat.id" class="flex flex-col items-center text-center p-4 bg-gray-100" :class="i == (statsResume.length -1) ? 'responsive-rounded-r' : i == 0 ? 'responsive-rounded-l' : ''">
           <span class="text-2xl font-bold">${{ stat.value }}</span>
           <span class="text-sm text-indigo-700">{{ stat.name }}</span>
         </div>
-      </div>
+      </div> -->
     </div>
 
     <div class="my-6 grid lg:justify-items-end justify-items-center">
@@ -61,7 +59,7 @@
 
 
     <UserPaymentsList
-      v-if="daysRemaining > 0"
+      v-if="daysRemaining > 0 || goal.validUntil === null"
       class="my-6"
       :selectedGoalId="route.params.goalId"
       :goalMainCurrency="goal.mainCurrency" 
@@ -83,15 +81,15 @@
                 <ArrowUpIcon v-if="payment.category !== 'Abono a cuenta'" class="h-4 w-4 text-red-600" />
                 <ArrowDownIcon v-if="payment.category === 'Abono a cuenta'" class="h-4 w-4 text-green-600" />
                 <div class="min-w-14 flex-auto">
-                  <p class="text-sm font-semibold leading-6 text-gray-900">${{ payment.currency !== goal.mainCurrency ? payment.currency :  '' }} {{ formatNumber(payment.amount) }}</p>
-                  <p v-if="payment.currency !== goal.mainCurrency" class="mt-1 truncate text-xs leading-5 text-gray-500">{{goal.mainCurrency}} {{ formatNumber(convertToMainCurrency(payment.amount, payment.currency, goal.mainCurrency)) }}</p>
+                  <p class="text-sm font-semibold leading-6 text-gray-900">${{ payment.currency !== goal.mainCurrency ? payment.currency :  '' }} {{ formatNumber(payment.amount, payment.currency) }}</p>
+                  <p v-if="payment.currency !== goal.mainCurrency" class="mt-1 truncate text-xs leading-5 text-gray-500">{{goal.mainCurrency}} {{ formatNumber(convertToMainCurrency(payment.amount, payment.currency, goal.mainCurrency), goal.mainCurrency) }}</p>
                 </div>
               </div>
               <div class="shrink-0 flex flex-row sm:items-center gap-2">
                 <p class="text-sm leading-6 text-gray-400 flex items-center gap-2 w-6 min-[480px]:w-44 overflow-visible">
                   <component :is="getIconComponent(payment.categoryIcon)" class="min-w-4 h-4" />
                   <span class="max-[480px]:hidden">{{ payment.category }}</span></p>
-                <button @click="handleDeletePayment(payment.id)" class="ml-4 text-slate-300 hover:text-red-600"><TrashIcon class="h-4 w-4" aria-hidden="true" /></button>
+                <button @click="handleDeletePayment(payment.id, payment.amount, payment.currency)" class="ml-4 text-slate-300 hover:text-red-600"><TrashIcon class="h-4 w-4" aria-hidden="true" /></button>
               </div>
             </div>
           </li>
@@ -104,7 +102,7 @@
 
 <script setup>
 import { ref, onMounted, computed, provide } from 'vue';
-import { getFirestore, doc, getDoc, collection, query, where, getDocs, deleteDoc, Timestamp } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs, deleteDoc, Timestamp } from 'firebase/firestore';
 import { useRoute } from 'vue-router';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import UserPaymentsList from '../components/UserPaymentsList.vue';
@@ -170,14 +168,16 @@ const iconMap = {
   // Agrega aquí todos los íconos que necesites
 };
 const stats = computed(() => [
-  { id: 1, name: 'Total de gastos durante el periodo', value: formatNumber(totalPaymentsAmount.value.total - totalPaymentsAmount.value.negative) || 0 },
-  { id: 2, name: 'Total restante para gastar', value: formatNumber(availableTotalAmountForPeriod.value) || 0 },
-  { id: 3, name: 'Gasto diario promedio para cumplir con tu meta de ahorro', value: `${formatNumber(averageAvailableAmountPerDay.value)} /día` || 0 }
+  { id: 1, name: goal.value.type === 'Tarjeta de crédito' ? 'Total de gastos' : 'Balance actual', enable: true, value: formatNumber(goal.value.currentBalanceOnAccount, goal.value.mainCurrency) || 0 },
+  { id: 2, name: 'Total restante para gastar', enable: true, value: formatNumber(availableTotalAmountForPeriod.value, goal.value.mainCurrency) || 0 },
+  { id: 3, name: 'Gasto diario promedio para cumplir con tu meta de ahorro', enable: goal.value.validUntil ? true : false, value: `${formatNumber(averageAvailableAmountPerDay.value, goal.value.mainCurrency)} /día` || 0 }
 ]);
-const statsResume = computed(() => [
-  { id: 1, name: 'Total de gastos durante el periodo', value: formatNumber(totalPaymentsAmount.value.total - totalPaymentsAmount.value.negative) || 0 },
-  { id: 2, name: 'Lo que lograste ahorrar durante el periodo', value: formatNumber(availableTotalAmountForPeriod.value + goal.value.savingGoalAmount)|| 0 },
-]);
+
+const enabledStats = computed(() => stats.value.filter(stat => stat.enable));
+// const statsResume = computed(() => [
+//   { id: 1, name: 'Total de gastos durante el periodo', value: formatNumber(totalPaymentsAmount.value.total - totalPaymentsAmount.value.negative) || 0 },
+//   { id: 2, name: 'Lo que lograste ahorrar durante el periodo', value: formatNumber(availableTotalAmountForPeriod.value + goal.value.savingGoalAmount)|| 0 },
+// ]);
 
 const chartOptions = computed(() => {
   const categories = Object.keys(totalPaymentsAmount.value.byCategory);
@@ -230,7 +230,10 @@ const fetchGoalDetails = async (goalId) => {
     const goalDoc = await getDoc(goalDocRef);
     if (goalDoc.exists()) {
       goal.value = { id: goalDoc.id, ...goalDoc.data() };
-      targetDate.value = goal.value.validUntil.toDate();
+      console.log(goal.value.validUntil)
+      if (goal.value.validUntil !== null) {
+        targetDate.value = goal.value.validUntil.toDate();
+      }
       calculateDaysRemaining();
     } else {
       throw new Error('Goal not found');
@@ -240,18 +243,49 @@ const fetchGoalDetails = async (goalId) => {
   }
 };
 
-const onPaymentSaved = () => {
-  fetchPaymentsForGoal();
-};
+async function updateGoalCurrentBalance(goalId, newBalance) {
+  try {
+    // Referencia al documento en Firestore
+    const goalRef = doc(db, 'goals', goalId);
 
-const handleDeletePayment = async (paymentId) => {
+    // Actualizar el campo `currentBalanceOnUpdate`
+    await updateDoc(goalRef, {
+      currentBalanceOnAccount: parseFloat(newBalance),
+    });
+
+    console.log('El campo currentBalanceOnUpdate ha sido actualizado exitosamente');
+  } catch (error) {
+    console.error('Error al actualizar el campo currentBalanceOnUpdate:', error);
+  }
+}
+
+async function onPaymentSaved(amount, currency) {
+  const goalId = route.params.goalId;
+  await fetchPaymentsForGoal();
+  if (goal.value.type === 'Cuenta bancaria') {
+    await updateGoalCurrentBalance(goalId, goal.value.currentBalanceOnAccount - convertToMainCurrency(amount, currency, goal.value.mainCurrency));
+  } else {
+    console.log('CONVERSION', goal.value.currentBalanceOnAccount + convertToMainCurrency(amount, currency, goal.value.mainCurrency))
+    await updateGoalCurrentBalance(goalId, (goal.value.currentBalanceOnAccount + convertToMainCurrency(amount, currency, goal.value.mainCurrency)));
+  }
+  await fetchGoalDetails(goalId);
+}
+
+const handleDeletePayment = async (paymentId, paymentAmount, paymentCurrency) => {
   const user = auth.currentUser;
+  const goalId = route.params.goalId;
   if (user) {
     // Luego, elimina el presupuesto
     await deleteDoc(doc(db, 'payments', paymentId));
 
     // Actualizar la lista de presupuestos después de eliminar
     fetchPaymentsForGoal();
+    if (goal.value.type === 'Cuenta bancaria') {
+      await updateGoalCurrentBalance(goalId, goal.value.currentBalanceOnAccount + convertToMainCurrency(paymentAmount, paymentCurrency, goal.value.mainCurrency));
+    } else {
+      await updateGoalCurrentBalance(goalId, goal.value.currentBalanceOnAccount - convertToMainCurrency(paymentAmount, paymentCurrency, goal.value.mainCurrency));
+    }
+    await fetchGoalDetails(goalId);
   }
 };
 
@@ -369,7 +403,7 @@ const totalPaymentsAmount = computed(() => {
 
 
 const availableTotalAmountForPeriod = computed(() => {
-  return goal.value.availableAmount - totalPaymentsAmount.value.total - goal.value.savingGoalAmount;
+  return goal.value.availableAmount - goal.value.currentBalanceOnAccount;
 });
 
 const averageAvailableAmountPerDay = computed(() => {
@@ -388,6 +422,12 @@ function convertToMainCurrency(amount, paymentCurrency, mainCurrency) {
   }
   if (paymentCurrency == 'CLP' && mainCurrency == 'COP') {
     return amount * conversionRateCLPCOP.value;
+  }
+  if (paymentCurrency == 'CLP' && mainCurrency == 'CLP') {
+    return amount;
+  }
+  if (paymentCurrency == 'COP' && mainCurrency == 'COP') {
+    return amount;
   }
 }
 
