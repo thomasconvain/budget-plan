@@ -31,7 +31,7 @@
     </div>
 
     <div class="mt-20 md:mt-0 text-indigo-950">
-      <div class="grid grid-cols-1 gap-1" :class="`lg:grid-cols-${enabledStats.length}`">
+      <div class="grid grid-cols-1 gap-1" :class="`lg:grid-cols-${enabledStats.length.toString()}`">
         <div v-for="(stat, i) in enabledStats" :key="stat.id" class="flex flex-col items-center text-center p-4 bg-gray-100" :class="i == (stats.length -1) ? 'responsive-rounded-r' : i == 0 ? 'responsive-rounded-l' : ''">
           <span class="text-2xl font-bold">${{ stat.value }}</span>
           <span class="text-sm text-indigo-700">{{ stat.name }}</span>
