@@ -168,9 +168,9 @@ const iconMap = {
   // Agrega aquí todos los íconos que necesites
 };
 const stats = computed(() => [
-  { id: 1, name: goal.value.type === 'Tarjeta de crédito' ? 'Total de gastos' : 'Balance actual', enable: true, value: formatNumber(goal.value.currentBalanceOnAccount, goal.value.mainCurrency) || 0 },
-  { id: 2, name: 'Total restante para gastar', enable: true, value: formatNumber(availableTotalAmountForPeriod.value, goal.value.mainCurrency) || 0 },
-  { id: 3, name: 'Gasto diario promedio para cumplir con tu meta de ahorro', enable: goal.value.validUntil ? true : false, value: `${formatNumber(averageAvailableAmountPerDay.value, goal.value.mainCurrency)} /día` || 0 }
+  { id: 1, name: goal.value.type === 'Tarjeta de crédito' ? 'Cupo utilizado' : 'Balance actual', enable: true, value: formatNumber(goal.value.currentBalanceOnAccount, goal.value.mainCurrency) || 0 },
+  { id: 2, name: 'Total restante para gastar', enable: goal.value.type === 'Tarjeta de crédito', value: formatNumber(availableTotalAmountForPeriod.value, goal.value.mainCurrency) || 0 },
+  { id: 3, name: 'Gasto diario promedio autorizado por tu cupo disponible', enable: goal.value.validUntil ? true : false, value: `${formatNumber(averageAvailableAmountPerDay.value, goal.value.mainCurrency)} /día` || 0 }
 ]);
 
 const enabledStats = computed(() => stats.value.filter(stat => stat.enable));
@@ -230,7 +230,6 @@ const fetchGoalDetails = async (goalId) => {
     const goalDoc = await getDoc(goalDocRef);
     if (goalDoc.exists()) {
       goal.value = { id: goalDoc.id, ...goalDoc.data() };
-      console.log(goal.value.validUntil)
       if (goal.value.validUntil !== null) {
         targetDate.value = goal.value.validUntil.toDate();
       }
@@ -252,8 +251,6 @@ async function updateGoalCurrentBalance(goalId, newBalance) {
     await updateDoc(goalRef, {
       currentBalanceOnAccount: parseFloat(newBalance),
     });
-
-    console.log('El campo currentBalanceOnUpdate ha sido actualizado exitosamente');
   } catch (error) {
     console.error('Error al actualizar el campo currentBalanceOnUpdate:', error);
   }
@@ -265,7 +262,6 @@ async function onPaymentSaved(amount, currency) {
   if (goal.value.type === 'Cuenta bancaria') {
     await updateGoalCurrentBalance(goalId, goal.value.currentBalanceOnAccount - convertToMainCurrency(amount, currency, goal.value.mainCurrency));
   } else {
-    console.log('CONVERSION', goal.value.currentBalanceOnAccount + convertToMainCurrency(amount, currency, goal.value.mainCurrency))
     await updateGoalCurrentBalance(goalId, (goal.value.currentBalanceOnAccount + convertToMainCurrency(amount, currency, goal.value.mainCurrency)));
   }
   await fetchGoalDetails(goalId);
