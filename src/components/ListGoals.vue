@@ -11,7 +11,7 @@
         </div>
       </div>
     <h1 class="text-2xl font-semibold	mb-4">Tus tarjetas</h1>
-    <div v-if="goals.length > 0" class="max-w-4xl mx-auto">
+    <div v-if="creditCardGoals.length > 0" class="max-w-4xl mx-auto">
       <ul role="list" class="">
         <li v-for="goal in creditCardGoals" :key="goal.id" class="mb-4">
           <div class="flex items-center justify-between z-2 relative px-4 py-4 bg-white shadow-lg rounded-lg hover:bg-gray-50">
@@ -50,7 +50,7 @@
     </div>
     <p v-else class="my-8 text-gray-400">Aún no tienes tarjeta agregada</p>
     <h1 class="text-2xl font-semibold	mb-4 mt-16">Tus cuentas bancarias</h1>
-    <div v-if="goals.length > 0" class="max-w-4xl mx-auto">
+    <div v-if="bankAccountGoals.length > 0" class="max-w-4xl mx-auto">
       <ul role="list" class="">
         <li v-for="goal in bankAccountGoals" :key="goal.id" class="mb-4 flex items-center justify-between px-4 py-4 bg-white shadow-lg rounded-lg hover:bg-gray-50">
           <router-link :to="`/goal/${goal.id}`" class="flex items-center flex-1">
