@@ -41,7 +41,7 @@
           </div>
           <div class="w-full -mt-2 z-1 bg-gray-200 rounded-md h-4">
             <div
-              class="bg-indigo-600 h-4 rounded-md"
+              class="bg-indigo-600 h-4 rounded-md max-w-full"
               :style="{ width: (goal.currentBalanceOnAccount / goal.availableAmount * 100) + '%' }"
             ></div>
           </div>
