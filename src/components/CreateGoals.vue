@@ -250,7 +250,7 @@ const stage = ref(1);
 
 const computedDisableValidUntil = computed(() => type.value === 'Cuenta bancaria');
 const computedAvailableAmount = computed(() => type.value === 'Cuenta bancaria' ? 0 : null);
-const computedCurrentBalanceOnAccount = computed(() => type.value === 'Cuenta bancaria' ? null : 0);
+const computedCurrentBalanceOnAccount = computed(() => type.value === 'Tarjeta de crédito' ? 0 : null);
 
 watch(computedDisableValidUntil, (newValue) => {
   disableValidUntil.value = newValue;
