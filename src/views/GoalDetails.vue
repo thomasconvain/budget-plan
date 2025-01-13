@@ -39,8 +39,28 @@
           'lg:grid-cols-3': enabledStats.length === 3,
         }">
         <div v-for="(stat, i) in enabledStats" :key="stat.id" class="flex flex-col items-center text-center p-4 bg-gray-100" :class="i == (stats.length -1) ? 'responsive-rounded-r' : i == 0 ? 'responsive-rounded-l' : ''">
-          <span class="text-2xl font-bold">${{ stat.value }}</span>
+          <div v-if="stat.id === 1" class="w-full flex justify-end">
+            <PencilIcon v-if="!balanceReadyToEdit" class="h-4 w-4 hover:text-indigo-600 cursor-pointer" aria-hidden="true" @click="balanceReadyToEdit = !balanceReadyToEdit"/>
+            <XMarkIcon v-else class="h-4 w-4 z-20 hover:text-indigo-600 cursor-pointer" aria-hidden="true" @click="balanceReadyToEdit = !balanceReadyToEdit"/>
+          </div>
+          <span v-if="stat.id === 2 || stat.id === 3 || (stat.id === 1 && !balanceReadyToEdit)" class="text-2xl font-bold" :class="{'-mt-4': stat.id === 1}">${{ stat.value }}</span>
+          <div v-if="stat.id === 1 && balanceReadyToEdit" class="-mt-4 flex items-center justify-center">
+            <input
+              v-model="balanceToUpdate"
+              :placeholder="goal.currentBalanceOnAccount"
+              type="number"
+              class="text-2xl font-bold focus:outline-none focus:ring focus:ring-transparent bg-transparent text-center"
+              @blur="toggleEditing"
+              @keydown.enter="toggleEditing"
+            />
+          </div>
           <span class="text-sm text-indigo-700">{{ stat.name }}</span>
+          <button
+            v-if="stat.id === 1 && balanceReadyToEdit"
+            class="px-4 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 border border-transparent rounded-lg  hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            @click="editGoalCurrentBalance()">
+              Guardar
+          </button>
         </div>
       </div>
       <!-- <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-1">
@@ -116,7 +136,7 @@ import LoadingSpinner from '../components/LoadingSpinner.vue'
 import {formatDate, formatDateToLargeString} from '../utils/dateFormatter.js'
 import { formatNumber } from '../utils/currencyFormatters.js';
 import { fetchConversionRate } from '../utils/currencyConverter.js';
-import { CalendarIcon, InformationCircleIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, ChartPieIcon } from '@heroicons/vue/24/outline';
+import { PencilIcon, XMarkIcon, CalendarIcon, InformationCircleIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, ChartPieIcon } from '@heroicons/vue/24/outline';
 import { use } from 'echarts/core';
 import { PieChart } from 'echarts/charts';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -151,6 +171,8 @@ const conversionRateUSDCOP = ref(0);
 const conversionRateCOPCLP = ref(0);
 const conversionRateCLPCOP = ref(0);
 const showCharts = ref(false);
+const balanceReadyToEdit = ref(false);
+const balanceToUpdate = ref(0);
 const route = useRoute();
 const db = getFirestore();
 const auth = getAuth();
@@ -290,6 +312,14 @@ const handleDeletePayment = async (paymentId, paymentAmount, paymentCurrency) =>
     await fetchGoalDetails(goalId);
   }
 };
+
+const editGoalCurrentBalance = async () => {
+  const goalId = route.params.goalId;
+  await updateGoalCurrentBalance(goalId, balanceToUpdate.value);
+  balanceReadyToEdit.value = false;
+  await fetchGoalDetails(goalId);
+};
+
 
 const fetchPaymentsForGoal = async () => {
   const user = auth.currentUser;
@@ -444,6 +474,7 @@ onMounted(async () => {
       try {
         await fetchGoalDetails(goalId);
         await fetchPaymentsForGoal(goalId);
+        balanceToUpdate.value = goal.value.currentBalanceOnAccount;
       } catch (error) {
         console.error('Error during onMounted:', error);
       } finally {
