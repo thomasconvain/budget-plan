@@ -25,7 +25,7 @@
                   Se factura en {{calculateDaysRemaining(goal.validUntil.toDate()) }}  {{ calculateDaysRemaining(goal.validUntil.toDate()) <= 1 ? 'día' : 'días' }}
                 </p>
                 <p 
-                  v-else-if="goal.type !== 'Tarjeta de crédito'"
+                  v-else-if="goal.type !== 'Tarjeta de crédito' || goal.validUntil === null"
                   class="text-sm text-gray-500">
                   Sin fecha de facturación
                 </p>
