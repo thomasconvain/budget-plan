@@ -143,7 +143,7 @@ onMounted(() => {
       goals.value = await fetchGoals();
       // Sumar los valores para 'Tarjeta de crédito'
       const creditCardTotal = goals.value
-        .filter(goal => goal.type === 'Tarjeta de crédito' && goal.isArchived === false)
+        .filter(goal => goal.type === 'Tarjeta de crédito' && goal.isArchived !== true)
         .reduce((sum, goal) => sum + goal.currentBalanceOnAccount, 0);
 
       // Sumar los valores para 'Cuenta bancaria'
