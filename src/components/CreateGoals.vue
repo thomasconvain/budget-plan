@@ -60,9 +60,9 @@
         </option>
       </select> -->
       <div>
-        <p class="text-sm/6 text-gray-600">Elige la moneda principal de tu objetivo:</p>
+        <p class="text-sm/6 text-gray-600">Elige la moneda principal de tu {{ type?.toLowerCase() }}:</p>
       </div>
-      <div class="flex sm:flex-row flex-col gap-2">
+      <div class="flex sm:flex-row flex-col flex-wrap gap-2">
         <button
           v-for="option in options"
           :key="option.value"
@@ -89,20 +89,12 @@
           <p  class="text-sm/6 text-gray-600 mt-4">Indica el monto de gasto máximo que quieres configurar para esta tarjeta:</p>
         </div>
         <CurrencyInput
-          v-if="mainCurrency == 'CLP'"
           v-model="availableAmount"
           class="w-full my-1"
-          placeholder="100.000"
+          :placeholder="placeholderAmount"
+          :currency="mainCurrency"
           :showSelect="false"
-          :options="{ currency: mainCurrency }"
-        />
-        <CurrencyInput
-          v-if="mainCurrency == 'COP'"
-          v-model="availableAmount"
-          class="w-full my-1"
-          placeholder="400.000"
-          :showSelect="false"
-          :options="{ currency: mainCurrency }"
+          :options="{ currency: mainCurrency, currencyDisplay: 'hidden' }"
         />
         <p class="mb-3 text-sm/6 text-gray-400 italic">Puede ser el cupo de tu tarjeta de crédito o cualquier monto que estimes conveniente para mantener el control sobre tus finanzas</p>
       </div>
@@ -111,20 +103,12 @@
           <p  class="text-sm/6 text-gray-600 mt-4">Indica el balance actual que tienes en tu cuenta:</p>
         </div>
         <CurrencyInput
-          v-if="mainCurrency == 'CLP'"
           v-model="currentBalanceOnAccount"
           class="w-full my-1"
-          placeholder="100.000"
+          :placeholder="placeholderAmount"
+          :currency="mainCurrency"
           :showSelect="false"
-          :options="{ currency: mainCurrency }"
-        />
-        <CurrencyInput
-          v-if="mainCurrency == 'COP'"
-          v-model="currentBalanceOnAccount"
-          class="w-full my-1"
-          placeholder="400.000"
-          :showSelect="false"
-          :options="{ currency: mainCurrency }"
+          :options="{ currency: mainCurrency, currencyDisplay: 'hidden' }"
         />
       </div>
       <div class="flex justify-between">
@@ -243,7 +227,17 @@ const disableValidUntil = ref(false); // Controla si la fecha de término está 
 const options = ref([
   { value: 'CLP', text: 'Pesos Chilenos', countryCode: 'CL' },
   { value: 'COP', text: 'Pesos Colombianos', countryCode: 'CO' },
+  { value: 'EUR', text: 'Euros', countryCode: 'EU' },
+  { value: 'USD', text: 'Dólares', countryCode: 'US' }
 ]);
+const placeholderAmount = computed(() => {
+  const map = {
+    CLP: '100.000',
+    COP: '400.000',
+    EUR: '1.000',  // ajusta formato si necesitas
+  };
+  return map[mainCurrency.value] || '';
+});
 const isLoading = ref(false);
 
 const stage = ref(1);
@@ -265,7 +259,7 @@ watch(computedCurrentBalanceOnAccount, (newValue) => {
 });
 
 const canProceedToNextStage = computed(() => {
-  if (stage.value === 1) return type.value !== null;
+  if (stage.value === 1) return type.value !== null && title.value;
   if (stage.value === 2) return mainCurrency.value && (availableAmount.value || currentBalanceOnAccount.value);
   if (stage.value === 3) return validFrom.value && (validUntil.value || disableValidUntil.value);
   return false;

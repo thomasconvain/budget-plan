@@ -1,17 +1,23 @@
 // src/utils/currencyFormatter.js
 
-// Función para formatear una moneda específica (CLP, USD, etc.)
+// Formatea un número según la moneda:
+//  - CLP, COP → 0 decimales, locales es-CL y es-CO respectivamente
+//  - resto → 2 decimales, locale es-CL (puedes cambiar a en-US si prefieres)
 export const formatNumber = (value, currency) => {
-  const isCLP = currency === 'CLP';
+  const zeroDecimalCurrencies = ['CLP', 'COP'];
+  const fractionDigits = zeroDecimalCurrencies.includes(currency) ? 0 : 2;
 
-  const formatter = new Intl.NumberFormat(
-    isCLP ? 'es-CL' : 'es-CL', // Configurar la localización según la moneda
-    {
-      style: 'decimal',
-      currency: currency, // Define la moneda
-      minimumFractionDigits: isCLP ? 0 : 2, // 0 decimales para CLP, 2 para USD
-      maximumFractionDigits: isCLP ? 0 : 2 // Limitar también el máximo
-    }
-  );
+  // Define locale según la moneda
+  const locale = currency === 'COP'
+    ? 'es-CO'
+    : currency === 'COP' ? 'es-CL'
+    : 'es-ES';
+
+  const formatter = new Intl.NumberFormat(locale, {
+    style: 'decimal',
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  });
+
   return formatter.format(value);
 };

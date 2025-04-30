@@ -4,34 +4,11 @@
     <div class="my-1 flex gap-1 flex-wrap sm:flex-nowrap">
       <CurrencyInput
         class="sm:w-1/2 w-full"
-        v-if="currency == 'CLP'"
-        v-model="amount"
+        v-model.lazy="amount"
         v-model:currency="currency"
         :options="{
-          currency: 'CLP',
-          currencyDisplay: 'hidden'
-        }"
-        :currencyOptions="options"
-      />
-      <CurrencyInput
-        class="sm:w-1/2 w-full"
-        v-if="currency == 'COP'"
-        v-model="amount"
-        v-model:currency="currency"
-        :options="{
-          currency: 'COP',
-          currencyDisplay: 'hidden'
-        }"
-        :currencyOptions="options"
-      />
-      <CurrencyInput
-        class="sm:w-1/2 w-full"
-        v-if="currency == 'USD'"
-        v-model="amount"
-        v-model:currency="currency"
-        :options="{
-          currency: 'USD',
-          currencyDisplay: 'hidden'
+          autoDecimalDigits: false,
+          currency: currency,
         }"
         :currencyOptions="options"
       />
@@ -101,23 +78,8 @@ const options = ref([
   { value: 'CLP', text: 'Pesos Chilenos' },
   { value: 'USD', text: 'Dolares' },
   { value: 'COP', text: 'Pesos Colombianos' },
+  { value: 'EUR', text: 'Euros' },
 ]);
-const iconMap = {
-  GlobeAmericasIcon: OutlineIcons.GlobeAmericasIcon,
-  HomeIcon : OutlineIcons.HomeIcon,
-  MapPinIcon : OutlineIcons.MapPinIcon,
-  FilmIcon : OutlineIcons.FilmIcon,
-  BuildingStorefrontIcon : OutlineIcons.BuildingStorefrontIcon,
-  ShoppingCartIcon : OutlineIcons.ShoppingCartIcon,
-  ShoppingBagIcon : OutlineIcons.ShoppingBagIcon,
-  BanknotesIcon : OutlineIcons.BanknotesIcon,
-  CurrencyDollarIcon : OutlineIcons.CurrencyDollarIcon,
-  LightBulbIcon : OutlineIcons.LightBulbIcon,
-  ComputerDesktopIcon : OutlineIcons.ComputerDesktopIcon,
-  HeartIcon : OutlineIcons.HeartIcon
-
-  // Agrega aquí todos los íconos que necesites
-};
 
 const auth = getAuth();
 const db = getFirestore();
@@ -151,7 +113,12 @@ const fetchCategories = async () => {
 }
 
 const getIconComponent = (iconName) => {
-  return iconMap[iconName] || null;
+  const Icon = OutlineIcons[iconName];
+  if (!Icon) {
+    console.warn(`Icono "${iconName}" no encontrado en @heroicons/vue/24/outline`);
+    return null;
+  }
+  return Icon;
 };
 
 const handleSavePayment = async () => {

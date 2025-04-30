@@ -6,7 +6,12 @@
     <div
         class="grid grid-cols-1 gap-1 mb-16">
         <div class="flex flex-col items-center text-center p-4 bg-gray-100 rounded-lg">
-          <span class="text-2xl font-bold">${{ formatNumber(goalsTotalBalance, 'CLP') }}</span>
+          <span class="text-2xl font-bold flex align-center gap-x-2">
+            {{ currencySymbol(currentUserMainCurrency) }} {{ formatNumber(goalsTotalBalance, currentUserMainCurrency) }}
+            <span class="inline-flex items-center rounded-md bg-white px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
+              {{ currentUserMainCurrency }}
+            </span>
+          </span>
           <span class="text-sm text-indigo-700">Balance general</span>
         </div>
       </div>
@@ -44,8 +49,11 @@
               </div>
               <div class="text-right ml-auto">
                 <p class="text-md text-gray-800 font-semibold flex items-center gap-x-2">
-                  <ArrowUpIcon class="h-4 w-4 text-red-600" />
-                  ${{ formatNumber(goal.currentBalanceOnAccount, 'CLP') }}
+                  <ArrowUpIcon class="h-4 w-4 min-h-4 min-w-4 text-red-600" />
+                  <span class="flex flex-wrap justify-end gap-x-2">
+                    {{currencySymbol(goal.mainCurrency)}} {{ formatNumber(goal.currentBalanceOnAccount, goal.mainCurrency ) }}
+                    <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">{{ goal.mainCurrency }}</span>
+                  </span>
                 </p>
               </div>
             </router-link>
@@ -73,8 +81,11 @@
               </div>
               <div class="text-right ml-auto">
                 <p class="text-md text-gray-800 font-semibold flex items-center gap-x-2">
-                  <ArrowUpIcon class="h-4 w-4 text-red-600" />
-                  ${{ formatNumber(goal.currentBalanceOnAccount, 'CLP') }}
+                  <ArrowUpIcon class="h-4 w-4 min-h-4 min-w-4 text-red-600" />
+                  <span class="flex flex-wrap justify-end gap-x-2">
+                    {{currencySymbol(goal.mainCurrency)}} {{ formatNumber(goal.currentBalanceOnAccount, goal.mainCurrency ) }}
+                    <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">{{ goal.mainCurrency }}</span>
+                  </span>
                 </p>
               </div>
             </router-link>
@@ -94,8 +105,11 @@
             </div>
             <div class="text-right ml-auto">
               <p class="text-md text-gray-800 font-semibold flex items-center gap-x-2">
-                <ArrowDownIcon class="h-4 w-4 text-green-600" />
-                ${{ formatNumber(goal.currentBalanceOnAccount, 'CLP') }}
+                <ArrowDownIcon class="h-4 w-4 min-h-4 min-w-4 text-green-600" />
+                <span class="flex flex-wrap justify-end gap-x-2">
+                  {{currencySymbol(goal.mainCurrency)}} {{ formatNumber(goal.currentBalanceOnAccount, goal.mainCurrency ) }}
+                  <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">{{ goal.mainCurrency }}</span>
+                </span>
               </p>
             </div>
           </router-link>
@@ -112,23 +126,81 @@
         </div>
       </router-link>
     </div>
+
+    <TransitionRoot :show="showSelectMainCurrencyModal" as="modal">hola
+      <Dialog @close="showSelectMainCurrencyModal = false">
+        <DialogOverlay class="fixed inset-0 bg-black/30" />
+        <div class="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel class="bg-white p-6 rounded-lg min-w-[300px] max-w-[700px]">
+            <DialogTitle>Elige tu moneda principal</DialogTitle>
+            <div class="flex flex-col flex-wrap gap-2 mt-4">
+              <button
+                v-for="option in currencyOptions"
+                :key="option.value"
+                :class="[
+                  'flex items-center px-4 py-2 border rounded-lg transition',
+                  selectedMainCurrency === option.value
+                    ? 'bg-indigo-500 text-white'
+                    : 'bg-gray-200 text-gray-700',
+                  'hover:bg-indigo-300 hover:text-white'
+                ]"
+                @click="selectCurrency(option.value)"
+                :disabled="option.disabled"
+              >
+                <country-flag
+                  :country="option.countryCode"
+                  rounded
+                  class=""
+                />
+                {{ option.text }}
+              </button>
+            </div>
+            <div class="mt-6 flex justify-end">
+              <button
+                class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                @click="saveMainCurrency"
+              >
+                Guardar
+              </button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+    </TransitionRoot>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { Dialog, TransitionRoot } from '@headlessui/vue'
+import CountryFlag from 'vue-country-flag-next';
 import { ArrowUpIcon,ArrowDownIcon, CurrencyDollarIcon, CreditCardIcon, TrashIcon, PlusCircleIcon } from '@heroicons/vue/24/outline';
-import { getFirestore, collection, getDocs, updateDoc, query, where, deleteDoc, doc, writeBatch } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, getDoc, updateDoc, query, where, deleteDoc, doc, writeBatch } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import {fetchGoals} from '../utils/business/goals.js'
+import {fetchGoals} from '@/utils/business/goals.js'
+import { fetchUser } from '@/utils/business/users.js';
 import LoadingSpinner from '../components/LoadingSpinner.vue'
 import { formatNumber } from '../utils/currencyFormatters.js';
+import { convertToMainCurrency } from '../utils/currencyConverter';
 
 
 const auth = getAuth();
 const db = getFirestore();
 
+const userDocRef = ref(null)
+
 const isLoading = ref('true')
+const showSelectMainCurrencyModal = ref(false)
+
+const currentUser = ref(null);
+const currentUserMainCurrency = ref('CLP');
+const currencyOptions = ref([
+  { value: 'CLP', text: 'Pesos Chilenos', countryCode: 'CL' },
+  { value: 'COP', text: 'Pesos Colombianos', countryCode: 'CO' },
+  { value: 'EUR', text: 'Euros', countryCode: 'EU' },
+  { value: 'USD', text: 'Dólares', countryCode: 'US' }
+]);
+const selectedMainCurrency = ref('CLP');
 const goals = ref([]);
 const goalsTotalBalance = ref(0);
 
@@ -136,27 +208,63 @@ const creditCardGoals = computed(() => goals.value.filter(goal => goal.type === 
 const archivedCreditCardGoals = computed(() => goals.value.filter(goal => goal.type === 'Tarjeta de crédito' && goal.isArchived === true));
 const bankAccountGoals = computed(() => goals.value.filter(goal => goal.type === 'Cuenta bancaria'));
 
+
 onMounted(() => {
-  onAuthStateChanged(auth, async (user) => {
-      isLoading.value = true;
-    if (user) {
-      goals.value = await fetchGoals();
-      // Sumar los valores para 'Tarjeta de crédito'
-      const creditCardTotal = goals.value
-        .filter(goal => goal.type === 'Tarjeta de crédito' && goal.isArchived !== true)
-        .reduce((sum, goal) => sum + goal.currentBalanceOnAccount, 0);
-
-      // Sumar los valores para 'Cuenta bancaria'
-      const bankAccountTotal = goals.value
-        .filter(goal => goal.type === 'Cuenta bancaria')
-        .reduce((sum, goal) => sum + goal.currentBalanceOnAccount, 0);
-
-      // Calcular la diferencia
-      goalsTotalBalance.value = bankAccountTotal - creditCardTotal;
-      isLoading.value = false; // Desactivar estado de carga cuando todo esté cargado
+  onAuthStateChanged(auth, async user => {
+    if (!user) return
+    await recalculateTotals()
+    // referencia al documento de usuario
+    userDocRef.value = doc(db, 'users', user.uid)
+    const snap = await getDoc(userDocRef.value)
+    if (!snap.exists() || !snap.data().mainCurrency) {
+      // si no tiene mainCurrency, abrimos el modal
+      showSelectMainCurrencyModal.value = true
     }
-  });
-});
+  })
+})
+
+const recalculateTotals = async () => {
+  isLoading.value = true;
+  // 1) Traer metas y usuario
+  goals.value = await fetchGoals();
+  currentUser.value = await fetchUser();
+  currentUserMainCurrency.value = currentUser.value.mainCurrency || 'CLP';
+  const userCurrency = currentUserMainCurrency.value;
+
+  // 2) Filtrar grupos
+  const creditGoals = goals.value.filter(
+    g => g.type === 'Tarjeta de crédito' && !g.isArchived
+  );
+  const bankGoals = goals.value.filter(
+    g => g.type === 'Cuenta bancaria'
+  );
+
+  // 3) Convertir balances al mainCurrency del usuario
+  const creditAmounts = await Promise.all(
+    creditGoals.map(g =>
+      convertToMainCurrency(
+        g.currentBalanceOnAccount,
+        g.mainCurrency,
+        userCurrency
+      )
+    )
+  );
+  const bankAmounts = await Promise.all(
+    bankGoals.map(g =>
+      convertToMainCurrency(
+        g.currentBalanceOnAccount,
+        g.mainCurrency,
+        userCurrency
+      )
+    )
+  );
+
+  // 4) Sumar y calcular diferencia
+  const creditTotal = creditAmounts.reduce((sum, v) => sum + v, 0);
+  const bankTotal   = bankAmounts.reduce((sum, v) => sum + v, 0);
+  goalsTotalBalance.value = bankTotal - creditTotal;
+  isLoading.value = false;
+};
 
 const handleDeleteGoal = async (goalId) => {
   const user = auth.currentUser;
@@ -176,7 +284,7 @@ const handleDeleteGoal = async (goalId) => {
     await deleteDoc(doc(db, 'goals', goalId));
 
     // Actualizar la lista de presupuestos después de eliminar
-    goals.value = await fetchGoals();
+    goals.value = await recalculateTotals()();
   }
 };
 
@@ -187,7 +295,7 @@ const archiveGoal = async (goalId) => {
     console.log(`Goal ${goalId} archivado correctamente`)
     // aquí podrías emitir un evento o actualizar un state local
     // Actualizar la lista de presupuestos después de eliminar
-    goals.value = await fetchGoals();
+    goals.value = await recalculateTotals()();
   } catch (error) {
     console.error('Error archivando goal:', error)
   }
@@ -197,6 +305,32 @@ const calculateDaysRemaining = (targetDate) => {
   const today = new Date();
   const differenceInMillis = targetDate - today;
   return Math.ceil(differenceInMillis / (1000 * 60 * 60 * 24));
+}
+
+const currencySymbol = (currency) => {
+  const map = {
+    EUR: '€',
+    USD: '$',
+    CLP: '$',
+    COP: '$',
+  };
+  return map[currency] || currency;
+};
+
+const selectCurrency = (currency) => {
+  selectedMainCurrency.value = currency;
+};
+async function saveMainCurrency() {
+  if (!userDocRef.value) return
+  try {
+    await updateDoc(userDocRef.value, {
+      mainCurrency: selectedMainCurrency.value
+    })
+    showSelectMainCurrencyModal.value = false
+    recalculateTotals()
+  } catch (err) {
+    console.error('Error guardando mainCurrency:', err)
+  }
 }
 
 </script>
