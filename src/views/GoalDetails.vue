@@ -179,16 +179,24 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, provide } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
+import { Timestamp, getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import UserPaymentsList from '../components/UserPaymentsList.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import { formatDate, formatDateToLargeString } from '../utils/dateFormatter';
 import { formatNumber } from '../utils/currencyFormatters';
 import { convertToMainCurrency } from '../utils/currencyConverter';
-import VChart from 'vue-echarts';
+import {
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+} from 'echarts/components';
+import { use } from 'echarts/core';
+import { PieChart } from 'echarts/charts';
+import { CanvasRenderer } from 'echarts/renderers';
+import VChart, { THEME_KEY } from 'vue-echarts';
 import {
   PencilIcon,
   XMarkIcon,
@@ -200,6 +208,17 @@ import {
   ChartPieIcon
 } from '@heroicons/vue/24/outline';
 import * as OutlineIcons from '@heroicons/vue/24/outline';
+
+// ECharts necesita importar las capacidades de los gráficos y renderizado
+use([
+  PieChart,
+  CanvasRenderer,
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+]);
+
+provide(THEME_KEY, 'light');
 
 const db = getFirestore();
 const auth = getAuth();
@@ -281,23 +300,58 @@ const chartOptions = computed(() => {
   return {
     tooltip: { trigger: 'item' },
     legend: { top: '0%', left: 'center' },
-    series: [{ type: 'pie', radius: ['40%', '70%'], data }]
+    series: [
+    {
+      name: 'Categoría',
+      type: 'pie',
+      radius: ['40%', '70%'],
+      avoidLabelOverlap: false,
+      padAngle: 1,
+      itemStyle: {
+        borderRadius: 10
+      },
+      label: {
+        show: false,
+        position: 'inner'
+      },
+      labelLine: {
+        show: false
+      },
+      data: data, // Se asignan los datos dinámicamente
+      color: ['#4f46e5', '#6c63f0', '#8981fa', '#a7a0ff', '#c4bfff', '#3d3ab3', '#312e8b', '#262366', '#1c1940', '#110e33'], // Tailwind colors
+    },
+  ],
   };
 });
 
 // Group by date
-const groupedPayments = computed(() =>
-  Object.entries(
-    payments.value.reduce((acc, p) => {
-      const d = p.date.toDate ? p.date.toDate() : new Date(p.date);
-      const key = d.toISOString().split('T')[0];
-      (acc[key] = acc[key] || []).push(p);
+const groupedPayments = computed(() => {
+  const grouped = payments.value.reduce((acc, payment) => {
+    const date = payment.date instanceof Timestamp ? payment.date.toDate() : new Date(payment.date);
+
+    // Normalizar la fecha a medianoche para ignorar horas, minutos y segundos
+    const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate() +1);
+
+    // Convertir la fecha a una cadena en formato 'YYYY-MM-DD'
+    const dateString = normalizedDate.toISOString().split('T')[0];
+
+    if (!acc[dateString]) {
+      acc[dateString] = [];
+    }
+
+    acc[dateString].push(payment);
+
+    return acc;
+  }, {});
+
+  // Ordenar las fechas (claves) en orden descendente para que la fecha más reciente esté arriba
+  return Object.keys(grouped)
+    .sort((a, b) => new Date(b) - new Date(a))
+    .reduce((acc, key) => {
+      acc[key] = grouped[key];
       return acc;
-    }, {})
-  )
-    .sort(([a], [b]) => new Date(b) - new Date(a))
-    .reduce((obj, [k, v]) => ((obj[k] = v), obj), {})
-);
+    }, {});
+});
 
 // Save balance edits
 const toggleBalanceEdit = () => (balanceReadyToEdit.value = !balanceReadyToEdit.value);
