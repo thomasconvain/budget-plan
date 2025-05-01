@@ -39,7 +39,7 @@
         v-if="goal.validUntil"
         class="min-w-fit inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-800">
         <CalendarIcon class="h-4 w-4" />
-        <strong class="text-indigo-700 ml-1">{{ formatDate(goal.validFrom) }}</strong>
+        <strong class="text-indigo-700 mx-1">{{ formatDate(goal.validFrom) }}</strong>
         hasta
         <strong class="text-indigo-700 ml-1">{{ formatDate(goal.validUntil) }}</strong>
       </div>
@@ -208,6 +208,7 @@ import {
   ChartPieIcon
 } from '@heroicons/vue/24/outline';
 import * as OutlineIcons from '@heroicons/vue/24/outline';
+import { Capacitor } from '@capacitor/core';
 
 // ECharts necesita importar las capacidades de los gráficos y renderizado
 use([
@@ -225,7 +226,7 @@ const auth = getAuth();
 const route = useRoute();
 const router = useRouter();
 
-const isNativeApp = false; // Ajusta según tu lógica de Capacitor
+const isNativeApp = Capacitor.isNativePlatform();
 const goal = ref(null);
 const payments = ref([]);
 const isLoading = ref(true);

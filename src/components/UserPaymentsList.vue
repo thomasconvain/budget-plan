@@ -9,6 +9,7 @@
         :options="{
           autoDecimalDigits: false,
           currency: currency,
+          currencyDisplay: 'hidden',
         }"
         :currencyOptions="options"
       />

@@ -10,8 +10,10 @@ export const formatNumber = (value, currency) => {
   // Define locale según la moneda
   const locale = currency === 'COP'
     ? 'es-CO'
-    : currency === 'COP' ? 'es-CL'
-    : 'es-ES';
+    : currency === 'CLP' ? 'es-CL'
+    : currency === 'USD' ? 'en-US'
+    : currency === 'EUR' ? 'es-ES' :
+    'es-CL';
 
   const formatter = new Intl.NumberFormat(locale, {
     style: 'decimal',
