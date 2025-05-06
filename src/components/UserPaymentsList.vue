@@ -61,6 +61,7 @@ import * as OutlineIcons from '@heroicons/vue/24/outline';
 import { getFirestore, collection, query, where, getDocs, addDoc, Timestamp } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import CurrencyInput from './CurrencyInput.vue';
+import { deriveKey, encrypt } from '@/services/encryption';
 
 
 // eslint-disable-next-line vue/no-setup-props-destructure, no-undef
@@ -124,40 +125,31 @@ const getIconComponent = (iconName) => {
 
 const handleSavePayment = async () => {
   const user = auth.currentUser;
-  const currentDate = Timestamp.now(); // Obtener la fecha actual en formato ISO
-  if (user && amount.value && category.value.name !== 'Abono a cuenta' && currency && props.selectedGoalId) {
-    await addDoc(collection(db, 'payments'), {
-      userId: user.uid,
-      amount: parseFloat(amount.value),
-      category: category.value.name,
-      categoryIcon: category.value.icon,
-      goalId: props.selectedGoalId,
-      date: currentDate, // Añadir la fecha actual al payment,
-      currency: currency.value,
-    });
+  const currentDate = Timestamp.now();
 
-    // Emitir el evento al componente padre en lugar de llamar a fetchPaymentsForGoal
-    emit('paymentSaved', amount.value, currency.value);
+  if (!user || !amount.value || !currency.value || !props.selectedGoalId) return;
 
-    // Limpiar los campos
-    amount.value = '';
-  } else if (category.value.name === 'Abono a cuenta') {
-    await addDoc(collection(db, 'payments'), {
-      userId: user.uid,
-      amount: -Math.abs(parseFloat(amount.value)),
-      category: category.value.name,
-      categoryIcon: category.value.icon,
-      goalId: props.selectedGoalId,
-      date: currentDate, // Añadir la fecha actual al payment,
-      currency: currency.value,
-    });
+  const key = deriveKey(user.uid);
+  const encryptedCategory = encrypt(category.value.name, key);
+  const encryptedIcon = encrypt(category.value.icon, key);
+  const parsedAmount = parseFloat(amount.value);
 
-    // Emitir el evento al componente padre en lugar de llamar a fetchPaymentsForGoal
-    emit('paymentSaved', -Math.abs(parseFloat(amount.value)), currency.value);
+  const isAbono = category.value.name === 'Abono a cuenta';
+  const finalAmount = isAbono ? -Math.abs(parsedAmount) : parsedAmount;
+  const encryptedAmount = encrypt(finalAmount.toString(), key);
 
-    // Limpiar los campos
-    amount.value = '';
-  }
+  await addDoc(collection(db, 'payments'), {
+    userId: user.uid,
+    amount: encryptedAmount,
+    category: encryptedCategory,
+    categoryIcon: encryptedIcon,
+    goalId: props.selectedGoalId,
+    date: currentDate,
+    currency: currency.value,
+  });
+
+  emit('paymentSaved', finalAmount, currency.value);
+  amount.value = '';
 };
 
 

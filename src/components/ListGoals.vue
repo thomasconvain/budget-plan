@@ -172,7 +172,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { Dialog, TransitionRoot } from '@headlessui/vue'
+import { Dialog, DialogOverlay, DialogPanel, DialogTitle, TransitionRoot } from '@headlessui/vue'
 import CountryFlag from 'vue-country-flag-next';
 import { ArrowUpIcon,ArrowDownIcon, CurrencyDollarIcon, CreditCardIcon, TrashIcon, PlusCircleIcon } from '@heroicons/vue/24/outline';
 import { getFirestore, collection, getDocs, getDoc, updateDoc, query, where, deleteDoc, doc, writeBatch } from 'firebase/firestore';

@@ -51,7 +51,7 @@ const { inputRef, setValue, setOptions } = useCurrencyInput(props.options)
 // cuando cambie el valor por v-model
 watch(() => props.modelValue, v => setValue(v))
 
-const emit = defineEmits(['update:currency'])
+const emit = defineEmits(['update:currency', 'update:modelValue'])
 const onInput = e => emit('update:currency', e.target.value)
 
 /**

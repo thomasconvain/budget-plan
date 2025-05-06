@@ -89,7 +89,7 @@
           <p  class="text-sm/6 text-gray-600 mt-4">Indica el monto de gasto máximo que quieres configurar para esta tarjeta:</p>
         </div>
         <CurrencyInput
-          v-model="availableAmount"
+          v-model.lazy="availableAmount"
           class="w-full my-1"
           :placeholder="placeholderAmount"
           :currency="mainCurrency"
@@ -103,7 +103,7 @@
           <p  class="text-sm/6 text-gray-600 mt-4">Indica el balance actual que tienes en tu cuenta:</p>
         </div>
         <CurrencyInput
-          v-model="currentBalanceOnAccount"
+          v-model.lazy="currentBalanceOnAccount"
           class="w-full my-1"
           :placeholder="placeholderAmount"
           :currency="mainCurrency"
@@ -211,6 +211,8 @@ import { fetchGoals } from '../utils/business/goals.js';
 import { useRouter } from 'vue-router';
 import { ArrowRightIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline';
 import CountryFlag from 'vue-country-flag-next';
+import { deriveKey, encrypt } from '@/services/encryption';
+
 
 
 const router = useRouter();
@@ -286,13 +288,23 @@ const handleSaveGoal = async () => {
   isLoading.value = true;
   const user = auth.currentUser;
   if (user && canSaveGoal.value) {
+    const key = deriveKey(user.uid);
+
+    const availableAmountValue = availableAmount.value;
+    const encryptedAvailableAmount = encrypt(availableAmountValue.toString(), key);
+    const currentBalanceOnAccountValue = currentBalanceOnAccount.value;
+    const encryptedCurrentBalanceOnAccount = encrypt(currentBalanceOnAccountValue.toString(), key);
+    const encryptedType = encrypt(type.value, key);
+    const encryptedTitle = encrypt(title.value, key);
+    const encryptedMainCurrency = encrypt(mainCurrency.value, key);
+
     await addDoc(collection(db, 'goals'), {
-      type: type.value,
-      title: title.value,
+      type: encryptedType,
+      title: encryptedTitle,
       userId: user.uid,
-      availableAmount: parseFloat(availableAmount.value),
-      currentBalanceOnAccount: parseFloat(currentBalanceOnAccount.value),
-      mainCurrency: mainCurrency.value,
+      availableAmount: encryptedAvailableAmount,
+      currentBalanceOnAccount: encryptedCurrentBalanceOnAccount,
+      mainCurrency: encryptedMainCurrency,
       validFrom: Timestamp.fromDate(new Date(validFrom.value)),
       validUntil: validUntil.value ? Timestamp.fromDate(new Date(validUntil.value)) : null,
     });

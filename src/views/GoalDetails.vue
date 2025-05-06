@@ -209,6 +209,7 @@ import {
 } from '@heroicons/vue/24/outline';
 import * as OutlineIcons from '@heroicons/vue/24/outline';
 import { Capacitor } from '@capacitor/core';
+import { deriveKey, decrypt, encrypt } from '@/services/encryption';
 
 // ECharts necesita importar las capacidades de los gráficos y renderizado
 use([
@@ -223,6 +224,8 @@ provide(THEME_KEY, 'light');
 
 const db = getFirestore();
 const auth = getAuth();
+const user = auth.currentUser;
+const key = user ? deriveKey(user.uid) : null;
 const route = useRoute();
 const router = useRouter();
 
@@ -241,32 +244,104 @@ const goBack = () => router.push({ name: 'Dashboard' });
 const getIconComponent = name => OutlineIcons[name] || null;
 
 // Fetch goal and calculate remaining days
-const fetchGoalDetails = async id => {
+const fetchGoalDetails = async (id) => {
+
+  if (!user) throw new Error('Usuario no autenticado');
+
+  // 2) Obtener el documento
   const snap = await getDoc(doc(db, 'goals', id));
   if (!snap.exists()) throw new Error('Goal no encontrado');
-  goal.value = { id: snap.id, ...snap.data() };
+
+  const data = snap.data();
+
+  // 3) Descifrar los campos que estaban cifrados
+  let title, type, decryptedAvailableAmount, availableAmount, decryptedCurrentBalanceOnAccount, currentBalanceOnAccount, mainCurrency;
+  try {
+    title                   = decrypt(data.title, key);
+    type                    = decrypt(data.type, key);
+    decryptedAvailableAmount = decrypt(data.availableAmount, key);
+    availableAmount         = parseFloat(decryptedAvailableAmount);
+    decryptedCurrentBalanceOnAccount = decrypt(data.currentBalanceOnAccount, key);
+    currentBalanceOnAccount = parseFloat(decryptedCurrentBalanceOnAccount);
+    mainCurrency            = decrypt(data.mainCurrency, key);
+  } catch (e) {
+    console.error('Error al descifrar los datos:', e);
+    // Fallback a datos en claro si no estaban cifrados
+    title                   = data.title;
+    type                    = data.type;
+    availableAmount         = data.availableAmount;
+    currentBalanceOnAccount = data.currentBalanceOnAccount;
+    mainCurrency            = data.mainCurrency;
+  }
+
+  // 4) Asignar goal.value con los campos descifrados
+  goal.value = {
+    id: snap.id,
+    ...data,                     // mete todos los campos crudos
+    title,                       // sobrescribe con los descifrados
+    type,
+    availableAmount,
+    currentBalanceOnAccount,
+    mainCurrency
+  };
+
+  // 5) Lógica ya existente para validUntil y daysRemaining
   if (goal.value.validUntil) {
-    const diff = new Date(goal.value.validUntil.toDate()) - new Date();
+    const diff =
+      new Date(goal.value.validUntil.toDate()).getTime() -
+      Date.now();
     daysRemaining.value = Math.ceil(diff / (1000 * 60 * 60 * 24));
   }
+
+  // 6) Inicializar el balance al valor descifrado
   balanceToUpdate.value = goal.value.currentBalanceOnAccount;
 };
 
 // Fetch and augment payments with convertedAmount
-const fetchPaymentsForGoal = async id => {
-  const user = auth.currentUser;
+const fetchPaymentsForGoal = async (goalId) => {
+  if (!user) return;
+  // 2) Crea la consulta
   const q = query(
     collection(db, 'payments'),
-    where('goalId', '==', id),
+    where('goalId', '==', goalId),
     where('userId', '==', user.uid)
   );
+
+  // 3) Obtén los documentos
   const snap = await getDocs(q);
   const raw = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+  // 4) Descifra y convierte
   payments.value = await Promise.all(
-    raw.map(async p => ({
-      ...p,
-      convertedAmount: await convertToMainCurrency(p.amount, p.currency || goal.value.mainCurrency, goal.value.mainCurrency)
-    }))
+    raw.map(async p => {
+      let category, categoryIcon, decryptedAmount, amount;
+
+      try {
+        category     = decrypt(p.category, key);
+        categoryIcon = decrypt(p.categoryIcon, key);
+        decryptedAmount = decrypt(p.amount, key);
+        amount = parseFloat(decryptedAmount);
+        console.log('Descifrado:', { category, categoryIcon, amount });
+      } catch (e) {
+        category     = p.category;
+        categoryIcon = p.categoryIcon;
+        amount = p.amount;
+      }
+
+      const convertedAmount = await convertToMainCurrency(
+        amount,
+        p.currency || goal.value.mainCurrency,
+        goal.value.mainCurrency
+      );
+
+      return {
+        ...p,
+        category,
+        categoryIcon,
+        amount,
+        convertedAmount
+      };
+    })
   );
 };
 
@@ -357,7 +432,8 @@ const groupedPayments = computed(() => {
 // Save balance edits
 const toggleBalanceEdit = () => (balanceReadyToEdit.value = !balanceReadyToEdit.value);
 const saveEditedBalance = async () => {
-  await updateDoc(doc(db, 'goals', goal.value.id), { currentBalanceOnAccount: parseFloat(balanceToUpdate.value) });
+  const balanceToUpdateValue = parseFloat(balanceToUpdate.value);
+  await updateDoc(doc(db, 'goals', goal.value.id), { currentBalanceOnAccount: encrypt(balanceToUpdateValue.toString(), key)});
   balanceReadyToEdit.value = false;
   await fetchGoalDetails(goal.value.id);
 };
@@ -370,7 +446,8 @@ const onPaymentSaved = async (amount, currency) => {
   const newBal = goal.value.type === 'Cuenta bancaria'
     ? goal.value.currentBalanceOnAccount - delta
     : goal.value.currentBalanceOnAccount + delta;
-  await updateDoc(doc(db, 'goals', id), { currentBalanceOnAccount: newBal });
+  const newBalToEncrypt =newBal.toString();
+  await updateDoc(doc(db, 'goals', id), { currentBalanceOnAccount: encrypt(newBalToEncrypt, key) });
   await fetchGoalDetails(id);
 };
 
