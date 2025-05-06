@@ -243,6 +243,17 @@ const goBack = () => router.push({ name: 'Dashboard' });
 // Icon helper
 const getIconComponent = name => OutlineIcons[name] || null;
 
+function tryDecrypt(strOrFallback, key, parser = x => x) {
+  try {
+    const dec = decrypt(strOrFallback, key);
+    return parser(dec);
+  } catch {
+    return typeof strOrFallback === 'string'
+      ? parser(strOrFallback)
+      : strOrFallback;
+  }
+}
+
 // Fetch goal and calculate remaining days
 const fetchGoalDetails = async (id) => {
 
@@ -256,23 +267,14 @@ const fetchGoalDetails = async (id) => {
 
   // 3) Descifrar los campos que estaban cifrados
   let title, type, decryptedAvailableAmount, availableAmount, decryptedCurrentBalanceOnAccount, currentBalanceOnAccount, mainCurrency;
-  try {
-    title                   = decrypt(data.title, key);
-    type                    = decrypt(data.type, key);
-    decryptedAvailableAmount = decrypt(data.availableAmount, key);
+
+    title                   = tryDecrypt(data.title, key);
+    type                    = tryDecrypt(data.type, key);
+    decryptedAvailableAmount = tryDecrypt(data.availableAmount, key);
     availableAmount         = parseFloat(decryptedAvailableAmount);
-    decryptedCurrentBalanceOnAccount = decrypt(data.currentBalanceOnAccount, key);
+    decryptedCurrentBalanceOnAccount = tryDecrypt(data.currentBalanceOnAccount, key);
     currentBalanceOnAccount = parseFloat(decryptedCurrentBalanceOnAccount);
-    mainCurrency            = decrypt(data.mainCurrency, key);
-  } catch (e) {
-    console.error('Error al descifrar los datos:', e);
-    // Fallback a datos en claro si no estaban cifrados
-    title                   = data.title;
-    type                    = data.type;
-    availableAmount         = data.availableAmount;
-    currentBalanceOnAccount = data.currentBalanceOnAccount;
-    mainCurrency            = data.mainCurrency;
-  }
+    mainCurrency            = tryDecrypt(data.mainCurrency, key);
 
   // 4) Asignar goal.value con los campos descifrados
   goal.value = {

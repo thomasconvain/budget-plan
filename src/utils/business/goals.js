@@ -12,6 +12,18 @@ import { deriveKey, decrypt } from '@/services/encryption';
 const auth = getAuth();
 const db = getFirestore();
 
+
+function tryDecrypt(strOrFallback, key, parser = x => x) {
+  try {
+    const dec = decrypt(strOrFallback, key);
+    return parser(dec);
+  } catch {
+    return typeof strOrFallback === 'string'
+      ? parser(strOrFallback)
+      : strOrFallback;
+  }
+}
+
 export const fetchGoals = async () => {
   const user = auth.currentUser;
   if (!user) return [];
@@ -32,22 +44,14 @@ export const fetchGoals = async () => {
 
     // Descifra cada campo que guardaste encriptado
     let title, type, decryptedAvailableAmount, availableAmount, decryptedCurrentBalanceOnAccount, currentBalanceOnAccount, mainCurrency;
-    try {
-      title       = decrypt(data.title, key);
-      type = decrypt(data.type, key);
-      decryptedAvailableAmount = decrypt(data.availableAmount, key);
+
+      title       = tryDecrypt(data.title, key);
+      type = tryDecrypt(data.type, key);
+      decryptedAvailableAmount = tryDecrypt(data.availableAmount, key);
       availableAmount = parseFloat(decryptedAvailableAmount);
-      decryptedCurrentBalanceOnAccount = decrypt(data.currentBalanceOnAccount, key);
+      decryptedCurrentBalanceOnAccount = tryDecrypt(data.currentBalanceOnAccount, key);
       currentBalanceOnAccount = parseFloat(decryptedCurrentBalanceOnAccount);
-      mainCurrency = decrypt(data.mainCurrency, key);
-    } catch (e) {
-      // valores por defecto si falla
-      title       = data.title;
-      type = data.type;
-      availableAmount = data.availableAmount;
-      currentBalanceOnAccount = data.currentBalanceOnAccount;
-      mainCurrency = data.mainCurrency;
-    }
+      mainCurrency = tryDecrypt(data.mainCurrency, key);
 
     // Si tienes otros campos cifrados, añádelos aquí:
     // por ejemplo, si targetAmount era string cifrado:
