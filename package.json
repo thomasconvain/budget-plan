@@ -10,7 +10,7 @@
   "dependencies": {
     "@capacitor/android": "^6.1.2",
     "@capacitor/cli": "^6.1.2",
-    "@capacitor/core": "^7.0.0",
+    "@capacitor/core": "^6.1.2",
     "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
     "@headlessui/vue": "^1.7.22",
     "@heroicons/vue": "^2.1.5",
