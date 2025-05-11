@@ -10,6 +10,8 @@ const store = createStore({
   state: {
     user: null,
     loading: true,
+    revenueCatReady: false,
+    premium: false,
   },
   mutations: {
     setUser(state, user) {
@@ -20,7 +22,13 @@ const store = createStore({
     },
     setLoading(state, isLoading) {
       state.loading = isLoading;
-    }
+    },
+    setPremium(state, isPremium) {
+      state.premium = isPremium
+    },
+    setRevenueCatReady(state, value) {
+      state.revenueCatReady = value
+    },
   },
   actions: {
     async register({ commit }, { email, password, name }) {

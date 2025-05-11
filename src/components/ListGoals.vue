@@ -127,7 +127,7 @@
       </router-link>
     </div>
 
-    <TransitionRoot :show="showSelectMainCurrencyModal" as="modal">hola
+    <TransitionRoot :show="showSelectMainCurrencyModal" as="modal">
       <Dialog @close="showSelectMainCurrencyModal = false">
         <DialogOverlay class="fixed inset-0 bg-black/30" />
         <div class="fixed inset-0 flex items-center justify-center p-4">
