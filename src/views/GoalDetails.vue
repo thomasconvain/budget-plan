@@ -72,7 +72,7 @@
           <div v-if="stat.id === 1" class="w-full flex justify-end">
             <component
               :is="balanceReadyToEdit ? XMarkIcon : PencilIcon"
-              class="h-4 w-4 cursor-pointer hover:text-indigo-600"
+              class="h-4 w-4 cursor-pointer hover:text-indigo-600 z-10"
               @click="toggleBalanceEdit"
             />
           </div>
@@ -87,8 +87,8 @@
             />
           </div>
 
-          <span v-else class="text-2xl font-bold" :class="{'-mt-4': stat.id === 1}">
-            {{ currencySymbol(goal.mainCurrency) }} {{ stat.value }}
+          <span v-else class="text-2xl font-bold" :class="{'-mt-4': stat.id === 1, 'text-red-800': parseFloat(stat.value) <= 0}">
+            {{ currencySymbol(goal.mainCurrency) }} {{ (stat.id === 3 && parseFloat(stat.value) < 0) ? '0 /día' : stat.value }}
           </span>
 
           <span class="text-sm text-indigo-700 mt-1">{{ stat.name }}</span>
@@ -361,7 +361,7 @@ const currencySymbol = (currency) => {
 const stats = computed(() => [
   { id: 1, name: goal.value.type === 'Tarjeta de crédito' ? 'Cupo utilizado' : 'Balance actual', enable: true, value: formatNumber(goal.value.currentBalanceOnAccount, goal.value.mainCurrency) },
   { id: 2, name: 'Total restante para gastar', enable: goal.value.type === 'Tarjeta de crédito', value: `${formatNumber(goal.value.availableAmount - goal.value.currentBalanceOnAccount, goal.value.mainCurrency)}` },
-  { id: 3, name: 'Gasto diario promedio autorizado', enable: !!goal.value.validUntil, value: `${formatNumber((goal.value.availableAmount - goal.value.currentBalanceOnAccount) / daysRemaining.value, goal.value.mainCurrency)} /día` }
+  { id: 3, name: 'Gasto diario promedio autorizado', enable: !!goal.value.validUntil && daysRemaining.value >=0, value: `${formatNumber((goal.value.availableAmount - goal.value.currentBalanceOnAccount) / daysRemaining.value, goal.value.mainCurrency)} /día` }
 ]);
 const enabledStats = computed(() => stats.value.filter(s => s.enable));
 
