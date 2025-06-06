@@ -3,79 +3,56 @@
 import {
   getFirestore,
   doc,
-  getDoc,
-  setDoc,
-  Timestamp
-} from 'firebase/firestore';
+  getDoc
+} from "firebase/firestore";
 
 const db = getFirestore();
 
 /**
- * Obtiene (y guarda sólo UNA VEZ) la tasa de conversión de una moneda a otra para el día actual.
+ * Lee la tasa ya precargada en Firestore para 'fromCurrency→toCurrency' en la fecha de hoy.
+ * Si no existe el doc, devuelve null (o puedes decidir llamar al endpoint como fallback).
  *
- * @param {string} fromCurrency - ISO code de moneda origen ('USD', 'CLP', 'COP').
- * @param {string} toCurrency   - ISO code de moneda destino.
- * @returns {Promise<number>}   - La tasa de conversión.
+ * @param {string} fromCurrency  - ISO code de moneda origen.
+ * @param {string} toCurrency    - ISO code de moneda destino.
+ * @returns {Promise<number|null>}
  */
 export const fetchConversionRate = async (fromCurrency, toCurrency) => {
-  // 1) Preparamos la fecha YYYY-MM-DD
+  // 1) Formateamos la fecha *de la misma forma* que en el Cloud Function.
   const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const dd = String(today.getDate()).padStart(2, '0');
+  const yyyy = today.getUTCFullYear();
+  const mm = String(today.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(today.getUTCDate()).padStart(2, "0");
   const dateString = `${yyyy}-${mm}-${dd}`;
 
-  // 2) ID único por par de monedas + fecha
+  // 2) Construimos el ID del doc
   const rateId = `${fromCurrency}_${toCurrency}_${dateString}`;
-
-  // 3) Referencia al doc determinístico
-  const rateDocRef = doc(db, 'conversion-rates', rateId);
-  const existing = await getDoc(rateDocRef);
-  if (existing.exists()) {
-    return existing.data().conversionRate;
+  const rateDocRef = doc(db, "conversion-rates", rateId);
+  const snap = await getDoc(rateDocRef);
+  if (!snap.exists()) {
+    console.warn(`No existe conversión para ${rateId}.`);
+    return null; // O podrías elegir disparar un fallback aquí
   }
 
-  // 4) Si no existe, la pedimos al servicio externo
-  const res = await fetch(
-    `https://us-central1-budget-plan-2c150.cloudfunctions.net/getConversionRate?from=${fromCurrency}&to=${toCurrency}`
-  );
-  const { conversionRate } = await res.json();
-
-  // 5) Guardamos con setDoc (crea/upserta sólo una vez con este ID)
-  await setDoc(rateDocRef, {
-    fromCurrency,
-    toCurrency,
-    conversionRate,
-    date: Timestamp.fromDate(new Date(dateString))
-  });
-
-  return conversionRate;
+  return snap.data().conversionRate;
 };
 
 /**
- * Convierte un monto desde la moneda de pago a la moneda principal.
+ * Convierte un monto usando la tasa precargada por el job nocturno.
  *
- * @param {number} amount          - Monto original.
- * @param {string} paymentCurrency - Código ISO de la moneda del monto.
- * @param {string} mainCurrency    - Código ISO de la moneda destino.
- * @returns {Promise<number>}      - Monto convertido.
+ * @param {number} amount
+ * @param {string} paymentCurrency
+ * @param {string} mainCurrency
+ * @returns {Promise<number>}
  */
 export async function convertToMainCurrency(amount, paymentCurrency, mainCurrency) {
-  // 1) Si ya es la misma moneda, devolvemos el monto tal cual
   if (paymentCurrency === mainCurrency) {
     return amount;
   }
 
-  try {
-    // 2) Buscamos la tasa y aplicamos la conversión
-    const rate = await fetchConversionRate(paymentCurrency, mainCurrency);
-    return amount * rate;
-  } catch (err) {
-    console.warn(
-      `Error al convertir ${amount} de ${paymentCurrency} a ${mainCurrency}:`,
-      err
-    );
-    // En caso de fallo, devolvemos el monto sin convertir
+  const rate = await fetchConversionRate(paymentCurrency, mainCurrency);
+  if (rate == null) {
+    // Si no existe la tasa (p. ej. falla del job nocturno), devolvemos el monto sin convertir
     return amount;
   }
+  return amount * rate;
 }
