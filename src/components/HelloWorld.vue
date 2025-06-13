@@ -10,7 +10,7 @@
       <h2 v-if="!isSignup" class="text-2xl font-bold text-center text-gray-900">Hola 👋</h2>
       <h2 v-else class="text-2xl font-bold text-center text-gray-900">Crea una cuenta 🚀</h2>
       <form v-if="!isSignup" class="mt-8 space-y-6" @submit.prevent="loginWithEmail">
-        <div class="rounded-xl shadow-sm">
+        <div class="rounded-xl">
           <div>
             <label for="email-address" class="sr-only">Email</label>
             <input v-model="email" id="email-address" name="email" type="email" autocomplete="email" required
@@ -22,7 +22,10 @@
             <input v-model="password" id="password" name="password" type="password" autocomplete="current-password" required
                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                    placeholder="Contraseña">
-            <p v-if="error">{{ error }}</p>
+            <p v-if="error" class="mt-2 text-sm text-red-600">{{ error }}</p>
+            <button @click.prevent="resetPassword" class="mt-2 text-sm text-gray-400 hover:text-indigo-500">
+              ¿Olvidaste tu contraseña?
+            </button>
           </div>
         </div>
 
@@ -91,6 +94,7 @@
 <script>
 import { mapGetters, mapActions } from 'vuex';
 import SignUp from './SignUp.vue'
+import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
 
 export default {
   components: {
@@ -102,6 +106,7 @@ export default {
       password: '',
       error: '',
       isSignup: false,
+      resetEmailSent: false,
     };
   },
   computed: {
@@ -113,8 +118,6 @@ export default {
       this.error = '';
       try {
         await this.signInWithEmail({ email: this.email, password: this.password });
-        // Redirigir a otra página si el inicio de sesión es exitoso
-        // this.$router.push('/dashboard');
       } catch (err) {
         if (err.code === 'auth/invalid-credential') {
           this.error = 'La contraseña es incorrecta.';
@@ -122,6 +125,25 @@ export default {
           this.error = 'No se encontró ninguna cuenta con este correo electrónico.';
         } else {
           this.error = 'Error al iniciar sesión: ' + err.message;
+        }
+      }
+    },
+    async resetPassword() {
+      if (!this.email) {
+        this.error = 'Por favor, ingresa tu correo electrónico primero.';
+        return;
+      }
+      
+      try {
+        const auth = getAuth();
+        await sendPasswordResetEmail(auth, this.email);
+        this.resetEmailSent = true;
+        this.error = 'Se ha enviado un correo electrónico con instrucciones para restablecer tu contraseña.';
+      } catch (err) {
+        if (err.code === 'auth/user-not-found') {
+          this.error = 'No se encontró ninguna cuenta con este correo electrónico.';
+        } else {
+          this.error = 'Error al enviar el correo de restablecimiento: ' + err.message;
         }
       }
     },
