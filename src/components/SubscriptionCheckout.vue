@@ -7,7 +7,7 @@
   
       <div
         v-else
-        class="bg-gray-800 text-white px-4 py-3 rounded-md shadow flex flex-col sm:flex-row items-center justify-between gap-3"
+        class="bg-indigo-900 text-white px-4 py-3 rounded-md shadow flex flex-col sm:flex-row items-center justify-between gap-3"
       >
         <div class="text-center sm:text-left">
           <p class="text-sm font-semibold">🚀 Mejora tu experiencia con PRO</p>

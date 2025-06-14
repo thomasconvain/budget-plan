@@ -60,7 +60,7 @@
           </div>
           <div class="w-full -mt-2 z-1 bg-gray-200 rounded-md h-4">
             <div
-              class="bg-gray-600 h-4 rounded-md max-w-full"
+              class="bg-gray-800 h-4 rounded-md max-w-full"
               :style="{ width: (goal.currentBalanceOnAccount / goal.availableAmount * 100) + '%' }"
             ></div>
           </div>
@@ -117,7 +117,7 @@
       </ul>
     </div>
     <p v-else class="my-8 text-gray-400">Aún no tienes cuenta agregada</p>
-    <div class="bg-gray-600 hover:bg-gray-800 text-white flex items-center justify-between px-4 py-4 rounded-lg">
+    <div class="bg-gray-900 hover:bg-gray-800 text-white flex items-center justify-between px-4 py-4 rounded-lg">
       <router-link :to="`/create-goal/`" class="flex items-center flex-1">
         <PlusCircleIcon class="h-6 w-6" aria-hidden="true" />
         <div class="ml-4">
