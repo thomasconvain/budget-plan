@@ -186,7 +186,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, provide, nextTick, onUnmounted } from 'vue';
+import { ref, onMounted, computed, provide, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Timestamp, getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -532,13 +532,7 @@ const deletePayment = async p => {
   }
 };
 
-const updateLastCardPosition = () => {
-  if (lastCardRef.value) {
-    const rect = lastCardRef.value.getBoundingClientRect();
-    emit('last-card-position', rect.top);
-  }
-};
-
+// Init
 onMounted(() => {
   onAuthStateChanged(auth, async user => {
     if (user) {
@@ -549,18 +543,13 @@ onMounted(() => {
       
       // Emitir la posición del último card después de que se monte el componente
       nextTick(() => {
-        updateLastCardPosition();
+        if (lastCardRef.value) {
+          const rect = lastCardRef.value.getBoundingClientRect();
+          emit('last-card-position', rect.top);
+        }
       });
     }
   });
-
-  // Agregar listener para el evento resize
-  window.addEventListener('resize', updateLastCardPosition);
-});
-
-onUnmounted(() => {
-  // Remover listener cuando el componente se desmonte
-  window.removeEventListener('resize', updateLastCardPosition);
 });
 </script>
 
