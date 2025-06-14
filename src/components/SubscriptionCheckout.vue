@@ -11,7 +11,7 @@
       >
         <div class="text-center sm:text-left">
           <p class="text-sm font-semibold">🚀 Mejora tu experiencia con PRO</p>
-          <p class="text-xs text-indigo-100">
+          <p class="text-xs text-gray-100">
             Accede a funcionalidades premium como presupuestos ilimitados y divisas múltiples.
           </p>
         </div>
@@ -19,7 +19,7 @@
         <button
           v-if="isNative"
           @click="comprar(unicoPaquete)"
-          class="bg-white text-indigo-600 px-4 py-2 rounded-md hover:bg-indigo-50 transition"
+          class="bg-white text-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 transition"
           :disabled="!unicoPaquete"
         >
           {{ unicoPaquete?.product.priceString || 'Suscribirse' }}
@@ -29,7 +29,7 @@
           v-else
           href="https://play.google.com/store/apps/details?id=com.budgetplanapp"
           target="_blank"
-          class="bg-white text-indigo-600 px-4 py-2 rounded-md hover:bg-indigo-50 transition"
+          class="bg-white text-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 transition"
         >
           Descarga la app
         </a>

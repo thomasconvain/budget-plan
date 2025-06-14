@@ -3,7 +3,7 @@
     <div class="flex items-center justify-center my-24">
     <div class="w-full min-w-32 sm:min-w-96 max-w-md p-8 space-y-6 bg-white shadow-lg rounded-xl">
       <div class="flex justify-center">
-        <!-- <svg class="w-10 h-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <!-- <svg class="w-10 h-10 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 .552-.895 1-2 1s-2-.448-2-1 .895-1 2-1 2 .448 2 1zm0 4c0 .552-.895 1-2 1s-2-.448-2-1 .895-1 2-1 2 .448 2 1z"/>
         </svg> -->
       </div>
@@ -14,16 +14,16 @@
           <div>
             <label for="email-address" class="sr-only">Email</label>
             <input v-model="email" id="email-address" name="email" type="email" autocomplete="email" required
-                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
                    placeholder="Email">
           </div>
           <div class="mt-4">
             <label for="password" class="sr-only">Contraseña</label>
             <input v-model="password" id="password" name="password" type="password" autocomplete="current-password" required
-                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
                    placeholder="Contraseña">
             <p v-if="error" class="mt-2 text-sm text-red-600">{{ error }}</p>
-            <button @click.prevent="resetPassword" class="mt-2 text-sm text-gray-400 hover:text-indigo-500">
+            <button @click.prevent="resetPassword" class="mt-2 text-sm text-gray-400 hover:text-gray-500">
               ¿Olvidaste tu contraseña?
             </button>
           </div>
@@ -31,12 +31,12 @@
 
         <div>
           <button type="submit"
-                  class="relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg group hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                  class="relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-lg group hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
             Entrar
           </button>
           <button
             @click="isSignup = true"
-            class="relative flex justify-center w-full mt-1 px-4 py-2 text-sm font-medium text-indigo-600 bg-transparent rounded-lg group hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            class="relative flex justify-center w-full mt-1 px-4 py-2 text-sm font-medium text-gray-600 bg-transparent rounded-lg group hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
             ¿No tienes una cuenta?
           </button>
         </div>
@@ -73,7 +73,7 @@
         <div v-if="isSignup">
           <SignUp />
           <button @click="isSignup = false"
-                    class="relative flex justify-center w-full mt-1 px-4 py-2 text-sm font-medium text-indigo-600 bg-transparent rounded-lg group hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    class="relative flex justify-center w-full mt-1 px-4 py-2 text-sm font-medium text-gray-600 bg-transparent rounded-lg group hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
               Volver
             </button>
         </div>

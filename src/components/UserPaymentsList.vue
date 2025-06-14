@@ -15,7 +15,7 @@
       />
       <Listbox as="div" class="grow" v-model="category">
         <div class="relative">
-          <ListboxButton class="relative w-full cursor-default rounded-md bg-white py-2 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm sm:leading-6">
+          <ListboxButton class="relative w-full cursor-default rounded-md bg-white py-2 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 sm:text-sm sm:leading-6">
             <span class="flex items-center">
               <component :is="getIconComponent(category.icon)" class="w-5 h-5" />
               <span class="ml-3 block truncate">{{ category.name }}</span>
@@ -27,13 +27,13 @@
           <transition leave-active-class="transition ease-in duration-100" leave-from-class="opacity-100" leave-to-class="opacity-0">
             <ListboxOptions class="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
               <ListboxOption as="template" v-for="category in availableCategories" :key="category.id" :value="category" v-slot="{ active, selected }">
-                <li :class="[active ? 'bg-indigo-100 text-indigo-500' : 'text-gray-900', 'relative cursor-default select-none py-2 pl-3 pr-9']">
+                <li :class="[active ? 'bg-gray-100 text-gray-500' : 'text-gray-900', 'relative cursor-default select-none py-2 pl-3 pr-9']">
                   <div class="flex items-center">
                     <component :is="getIconComponent(category.icon)" class="w-5 h-5" />
                     <span :class="[selected ? 'font-semibold' : 'font-normal', 'ml-3 block truncate']">{{ category.name }}</span>
                   </div>
 
-                  <span v-if="selected" :class="[active ? 'text-indigo-500' : 'text-gray-900', 'absolute inset-y-0 right-0 flex items-center pr-4']">
+                  <span v-if="selected" :class="[active ? 'text-gray-500' : 'text-gray-900', 'absolute inset-y-0 right-0 flex items-center pr-4']">
                     <CheckIcon class="h-5 w-5" aria-hidden="true" />
                   </span>
                 </li>
@@ -45,7 +45,7 @@
     </div>
 
     <button
-      class="mt-4 relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg group hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      class="mt-4 relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-lg group hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
       @click="handleSavePayment">
         Ingresar
     </button>
@@ -138,18 +138,28 @@ const handleSavePayment = async () => {
   const finalAmount = isAbono ? -Math.abs(parsedAmount) : parsedAmount;
   const encryptedAmount = encrypt(finalAmount.toString(), key);
 
-  await addDoc(collection(db, 'payments'), {
-    userId: user.uid,
-    amount: encryptedAmount,
-    category: encryptedCategory,
-    categoryIcon: encryptedIcon,
-    goalId: props.selectedGoalId,
-    date: currentDate,
-    currency: currency.value,
+  // Emitir el evento inmediatamente para actualizar la UI con toda la información necesaria
+  emit('paymentSaved', finalAmount, currency.value, {
+    name: category.value.name,
+    icon: category.value.icon
   });
-
-  emit('paymentSaved', finalAmount, currency.value);
   amount.value = '';
+
+  // Realizar la operación de base de datos en segundo plano
+  try {
+    await addDoc(collection(db, 'payments'), {
+      userId: user.uid,
+      amount: encryptedAmount,
+      category: encryptedCategory,
+      categoryIcon: encryptedIcon,
+      goalId: props.selectedGoalId,
+      date: currentDate,
+      currency: currency.value,
+    });
+  } catch (error) {
+    console.error('Error al guardar el pago:', error);
+    // Aquí podrías implementar una lógica para revertir los cambios en la UI si es necesario
+  }
 };
 
 

@@ -70,13 +70,22 @@ exports.revenuecatWebhook = functions.https.onRequest(async (req, res) => {
 
 // Lista de pares que quieras precargar cada día
 const currencyPairs = [
-  ["USD", "CLP"],
+  // USD como base
   ["USD", "EUR"],
+  ["USD", "CLP"],
   ["USD", "COP"],
+  // EUR como base
   ["EUR", "USD"],
   ["EUR", "CLP"],
   ["EUR", "COP"],
-  // … agrega o quita según lo que uses
+  // CLP como base
+  ["CLP", "USD"],
+  ["CLP", "EUR"],
+  ["CLP", "COP"],
+  // COP como base
+  ["COP", "USD"],
+  ["COP", "EUR"],
+  ["COP", "CLP"],
 ];
 
 /**

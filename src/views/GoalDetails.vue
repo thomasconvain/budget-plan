@@ -3,25 +3,25 @@
     <LoadingSpinner />
   </div>
   <div v-else>
-    <div v-if="!isNativeApp" class="w-full flex justify-end">
+
+    <div class="mt-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl text-white font-semibold">
+          🚀 {{ goal.type }}
+          <span
+            class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-700/10">
+            {{ goal.mainCurrency }}
+          </span>
+        </h1>
+        <p class="h-[20px] text-sm ml-9 text-slate-300">{{ goal.title }}</p>
+      </div>
+      <div v-if="!isNativeApp" class="flex justify-end">
       <button
-        class="px-4 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 border border-transparent rounded-lg hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        class="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-50 border border-transparent rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
         @click="goBack">
         Volver
       </button>
     </div>
-
-    <div class="mt-6 flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-semibold">
-          🚀 {{ goal.type }}
-          <span
-            class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
-            {{ goal.mainCurrency }}
-          </span>
-        </h1>
-        <p class="h-[20px] text-sm ml-9 text-slate-400">{{ goal.title }}</p>
-      </div>
     </div>
 
     <!-- Stats bar -->
@@ -29,23 +29,23 @@
       class="absolute md:relative md:mt-2 md:mb-6 inset-x-0 pt-4 px-8 md:px-0 md:pt-0 pb-2 flex flex-nowrap gap-1 overflow-auto scrollbar-hide">
       <div
         v-if="goal.type === 'Tarjeta de crédito'"
-        class="min-w-fit inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-800">
+        class="min-w-fit inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-300">
         Cupo de pago
-        <strong class="ml-1 text-indigo-700">
+        <strong class="ml-1 text-white">
           {{ currencySymbol(goal.mainCurrency) }} {{ formatNumber(goal.availableAmount, goal.mainCurrency) }}
         </strong>
       </div>
       <div
         v-if="goal.validUntil"
-        class="min-w-fit inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-800">
+        class="min-w-fit inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-300">
         <CalendarIcon class="h-4 w-4" />
-        <strong class="text-indigo-700 mx-1">{{ formatDate(goal.validFrom) }}</strong>
+        <strong class="text-white mx-1">{{ formatDate(goal.validFrom) }}</strong>
         hasta
-        <strong class="text-indigo-700 ml-1">{{ formatDate(goal.validUntil) }}</strong>
+        <strong class="text-white ml-1">{{ formatDate(goal.validUntil) }}</strong>
       </div>
       <div class="min-w-fit inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-800">
-        <InformationCircleIcon class="h-4 w-4" />
-        <strong class="text-indigo-700 ml-1">
+        <InformationCircleIcon class="h-4 w-4 text-gray-300" />
+        <strong class="text-white ml-1">
           <template v-if="daysRemaining > 0">{{ daysRemaining }} días restantes</template>
           <template v-else-if="goal.validUntil">Meta terminada</template>
           <template v-else>Sin fecha de término</template>
@@ -54,7 +54,7 @@
     </div>
 
     <!-- Stats cards -->
-    <div class="mt-20 md:mt-0 text-indigo-950">
+    <div class="mt-20 md:mt-0 text-gray-950">
       <div
         class="grid grid-cols-1 gap-1"
         :class="{
@@ -65,14 +65,15 @@
         <div
           v-for="(stat, i) in enabledStats"
           :key="stat.id"
-          class="flex flex-col items-center text-center p-4 bg-gray-100"
+          :ref="el => { if (i === enabledStats.length - 1) lastCardRef = el }"
+          class="flex flex-col items-center text-center p-4 bg-white shadow-lg rounded-lg"
           :class="[i === 0 ? 'responsive-rounded-l' : '', i === enabledStats.length - 1 ? 'responsive-rounded-r' : '']">
 
           <!-- Editable balance -->
           <div v-if="stat.id === 1" class="w-full flex justify-end">
             <component
               :is="balanceReadyToEdit ? XMarkIcon : PencilIcon"
-              class="h-4 w-4 cursor-pointer hover:text-indigo-600 z-10"
+              class="h-4 w-4 cursor-pointer hover:text-gray-600 z-10"
               @click="toggleBalanceEdit"
             />
           </div>
@@ -91,11 +92,11 @@
             {{ currencySymbol(goal.mainCurrency) }} {{ (stat.id === 3 && parseFloat(stat.value) < 0) ? '0 /día' : stat.value }}
           </span>
 
-          <span class="text-sm text-indigo-700 mt-1">{{ stat.name }}</span>
+          <span class="text-sm text-gray-700 mt-1">{{ stat.name }}</span>
 
           <button
             v-if="stat.id === 1 && balanceReadyToEdit"
-            class="px-4 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-2"
+            class="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 mt-2"
             @click="saveEditedBalance">
             Guardar
           </button>
@@ -106,7 +107,7 @@
     <!-- Charts toggle -->
     <div class="my-6 grid lg:justify-items-end justify-items-center">
       <button
-        class="flex gap-1 px-4 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        class="flex gap-1 px-4 py-2 text-xs font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
         @click="showCharts = !showCharts">
         <ChartPieIcon class="h-4 w-4" />
         {{ showCharts ? 'Ocultar' : 'Ver' }} repartición de gastos
@@ -128,7 +129,7 @@
 
     <div
       v-else
-      class="my-6 flex flex-wrap gap-5 bg-indigo-50 text-sm text-indigo-400 p-5 rounded-lg">
+      class="my-6 flex flex-wrap gap-5 bg-gray-50 text-sm text-gray-400 p-5 rounded-lg">
       <p>
         El periodo de tu presupuesto ha terminado, por lo que ya no puedes ingresar nuevos
         movimientos. Puedes crear un nuevo presupuesto para seguir monitoreando tus finanzas.
@@ -141,7 +142,9 @@
       <div v-for="(dayPayments, date) in groupedPayments" :key="date">
         <p class="mt-4 text-md font-semibold">{{ formatDateToLargeString(date) }}</p>
         <ul class="divide-y divide-gray-100">
-          <li v-for="payment in dayPayments" :key="payment.id">
+          <li v-for="payment in dayPayments" :key="payment.id" 
+              :class="{'animate-slide-in': payment.id.startsWith('temp-')}"
+              class="relative">
             <div class="flex justify-between gap-x-6 py-2">
               <div class="flex items-center gap-x-4">
                 <component
@@ -170,6 +173,10 @@
                 </button>
               </div>
             </div>
+            <!-- Indicador de estado -->
+            <div v-if="payment.id.startsWith('temp-')" 
+                 class="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-8 bg-gray-500 animate-pulse rounded-full">
+            </div>
           </li>
         </ul>
       </div>
@@ -179,7 +186,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, provide } from 'vue';
+import { ref, onMounted, computed, provide, nextTick, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Timestamp, getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -210,6 +217,7 @@ import {
 import * as OutlineIcons from '@heroicons/vue/24/outline';
 import { Capacitor } from '@capacitor/core';
 import { deriveKey, decrypt, encrypt } from '@/services/encryption';
+import { defineEmits } from 'vue';
 
 // ECharts necesita importar las capacidades de los gráficos y renderizado
 use([
@@ -237,6 +245,8 @@ const daysRemaining = ref(0);
 const showCharts = ref(false);
 const balanceReadyToEdit = ref(false);
 const balanceToUpdate = ref(0);
+const lastCardRef = ref(null);
+const emit = defineEmits(['last-card-position']);
 
 const goBack = () => router.push({ name: 'Dashboard' });
 
@@ -441,24 +451,94 @@ const saveEditedBalance = async () => {
 };
 
 // Handle payment saved / deleted
-const onPaymentSaved = async (amount, currency) => {
+const onPaymentSaved = async (amount, currency, categoryInfo) => {
   const id = route.params.goalId;
-  await fetchPaymentsForGoal(id);
+  
+  // Actualizar la UI inmediatamente
   const delta = await convertToMainCurrency(amount, currency, goal.value.mainCurrency);
   const newBal = goal.value.type === 'Cuenta bancaria'
     ? goal.value.currentBalanceOnAccount - delta
     : goal.value.currentBalanceOnAccount + delta;
-  const newBalToEncrypt =newBal.toString();
-  await updateDoc(doc(db, 'goals', id), { currentBalanceOnAccount: encrypt(newBalToEncrypt, key) });
-  await fetchGoalDetails(id);
+  
+  // Actualizar el estado local inmediatamente
+  goal.value.currentBalanceOnAccount = newBal;
+
+  // Crear un nuevo pago temporal para mostrar en la UI
+  const tempPayment = {
+    id: 'temp-' + Date.now(),
+    amount: amount,
+    currency: currency,
+    category: categoryInfo.name,
+    categoryIcon: categoryInfo.icon,
+    date: Timestamp.now(),
+    convertedAmount: delta,
+    isPending: true
+  };
+
+  // Agregar el pago temporal al inicio de la lista
+  payments.value = [tempPayment, ...payments.value];
+  
+  // Realizar las operaciones de base de datos en segundo plano
+  try {
+    const newBalToEncrypt = newBal.toString();
+    await updateDoc(doc(db, 'goals', id), { currentBalanceOnAccount: encrypt(newBalToEncrypt, key) });
+    await fetchPaymentsForGoal(id);
+  } catch (error) {
+    console.error('Error al actualizar el balance:', error);
+    // Aquí podrías implementar una lógica para revertir los cambios en la UI si es necesario
+  }
 };
 
 const deletePayment = async p => {
-  await deleteDoc(doc(db, 'payments', p.id));
-  await onPaymentSaved(-p.amount, p.currency);
+  // Actualizar la UI inmediatamente
+  const index = payments.value.findIndex(payment => payment.id === p.id);
+  if (index !== -1) {
+    payments.value.splice(index, 1);
+  }
+
+  // Actualizar el balance inmediatamente
+  const delta = await convertToMainCurrency(-p.amount, p.currency, goal.value.mainCurrency);
+  
+  // La lógica depende del tipo de meta:
+  let newBal;
+  if (goal.value.type === 'Cuenta bancaria') {
+    // Para cuenta bancaria:
+    // - Si es un gasto (positivo), al eliminarlo sumamos el monto original al balance
+    // - Si es un abono (negativo), al eliminarlo restamos el monto original del balance
+    newBal = goal.value.currentBalanceOnAccount - delta;
+  } else {
+    // Para tarjeta:
+    // - Si es un gasto (positivo), al eliminarlo disminuimos el cupo utilizado (sumamos el delta)
+    // - Si es un abono (negativo), al eliminarlo aumentamos el cupo utilizado (sumamos el delta)
+    newBal = goal.value.currentBalanceOnAccount + delta;
+  }
+  
+  // Actualizar el estado local inmediatamente
+  goal.value.currentBalanceOnAccount = newBal;
+
+  // Realizar las operaciones de base de datos en segundo plano
+  try {
+    const newBalToEncrypt = newBal.toString();
+    await deleteDoc(doc(db, 'payments', p.id));
+    await updateDoc(doc(db, 'goals', route.params.goalId), { 
+      currentBalanceOnAccount: encrypt(newBalToEncrypt, key) 
+    });
+    await fetchPaymentsForGoal(route.params.goalId);
+  } catch (error) {
+    console.error('Error al eliminar el pago:', error);
+    // Revertir los cambios en la UI si hay error
+    await fetchPaymentsForGoal(route.params.goalId);
+    await fetchGoalDetails(route.params.goalId);
+  }
 };
 
-// Init
+const updateLastCardPosition = () => {
+  if (lastCardRef.value) {
+    const rect = lastCardRef.value.getBoundingClientRect();
+    emit('last-card-position', rect.top);
+  }
+};
+
 onMounted(() => {
   onAuthStateChanged(auth, async user => {
     if (user) {
@@ -466,11 +546,52 @@ onMounted(() => {
       await fetchGoalDetails(id);
       await fetchPaymentsForGoal(id);
       isLoading.value = false;
+      
+      // Emitir la posición del último card después de que se monte el componente
+      nextTick(() => {
+        updateLastCardPosition();
+      });
     }
   });
+
+  // Agregar listener para el evento resize
+  window.addEventListener('resize', updateLastCardPosition);
+});
+
+onUnmounted(() => {
+  // Remover listener cuando el componente se desmonte
+  window.removeEventListener('resize', updateLastCardPosition);
 });
 </script>
 
 <style>
 /* ... tu CSS personalizado ... */
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
 </style>

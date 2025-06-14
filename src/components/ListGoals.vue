@@ -3,18 +3,17 @@
     <LoadingSpinner />
   </div>
   <div v-else>
-    <div
-        class="grid grid-cols-1 gap-1 mb-16">
-        <div class="flex flex-col items-center text-center p-4 bg-gray-100 rounded-lg">
-          <span class="text-2xl font-bold flex align-center gap-x-2">
-            {{ currencySymbol(currentUserMainCurrency) }} {{ formatNumber(goalsTotalBalance, currentUserMainCurrency) }}
-            <span class="inline-flex items-center rounded-md bg-white px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
-              {{ currentUserMainCurrency }}
-            </span>
+    <div class="relative mb-16">
+      <div class="flex flex-col items-center text-center p-4 bg-white shadow-lg rounded-lg">
+        <span class="text-2xl font-bold flex align-center gap-x-2">
+          {{ currencySymbol(currentUserMainCurrency) }} {{ formatNumber(goalsTotalBalance, currentUserMainCurrency) }}
+          <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-700/10">
+            {{ currentUserMainCurrency }}
           </span>
-          <span class="text-sm text-indigo-700">Balance general</span>
-        </div>
+        </span>
+        <span class="text-sm text-gray-700">Balance general</span>
       </div>
+    </div>
     <h1 class="text-2xl font-semibold	mb-4">Tus tarjetas</h1>
     <div v-if="creditCardGoals.length > 0" class="max-w-4xl mx-auto">
       <ul role="list" class="">
@@ -41,7 +40,7 @@
                     Se ha facturado esta tarjeta
                   </p>
                   <button
-                    class="px-4 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 border border-transparent rounded-lg hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    class="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-50 border border-transparent rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                     @click.stop.prevent="archiveGoal(goal.id)">
                       Archivar
                   </button>
@@ -52,7 +51,7 @@
                   <ArrowUpIcon class="h-4 w-4 min-h-4 min-w-4 text-red-600" />
                   <span class="flex flex-wrap justify-end gap-x-2">
                     {{currencySymbol(goal.mainCurrency)}} {{ formatNumber(goal.currentBalanceOnAccount, goal.mainCurrency ) }}
-                    <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">{{ goal.mainCurrency }}</span>
+                    <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-700/10">{{ goal.mainCurrency }}</span>
                   </span>
                 </p>
               </div>
@@ -61,7 +60,7 @@
           </div>
           <div class="w-full -mt-2 z-1 bg-gray-200 rounded-md h-4">
             <div
-              class="bg-indigo-600 h-4 rounded-md max-w-full"
+              class="bg-gray-600 h-4 rounded-md max-w-full"
               :style="{ width: (goal.currentBalanceOnAccount / goal.availableAmount * 100) + '%' }"
             ></div>
           </div>
@@ -84,7 +83,7 @@
                   <ArrowUpIcon class="h-4 w-4 min-h-4 min-w-4 text-red-600" />
                   <span class="flex flex-wrap justify-end gap-x-2">
                     {{currencySymbol(goal.mainCurrency)}} {{ formatNumber(goal.currentBalanceOnAccount, goal.mainCurrency ) }}
-                    <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">{{ goal.mainCurrency }}</span>
+                    <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-700/10">{{ goal.mainCurrency }}</span>
                   </span>
                 </p>
               </div>
@@ -108,7 +107,7 @@
                 <ArrowDownIcon class="h-4 w-4 min-h-4 min-w-4 text-green-600" />
                 <span class="flex flex-wrap justify-end gap-x-2">
                   {{currencySymbol(goal.mainCurrency)}} {{ formatNumber(goal.currentBalanceOnAccount, goal.mainCurrency ) }}
-                  <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">{{ goal.mainCurrency }}</span>
+                  <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-700/10">{{ goal.mainCurrency }}</span>
                 </span>
               </p>
             </div>
@@ -118,7 +117,7 @@
       </ul>
     </div>
     <p v-else class="my-8 text-gray-400">Aún no tienes cuenta agregada</p>
-    <div class="bg-indigo-600 hover:bg-indigo-800 text-white flex items-center justify-between px-4 py-4 rounded-lg">
+    <div class="bg-gray-600 hover:bg-gray-800 text-white flex items-center justify-between px-4 py-4 rounded-lg">
       <router-link :to="`/create-goal/`" class="flex items-center flex-1">
         <PlusCircleIcon class="h-6 w-6" aria-hidden="true" />
         <div class="ml-4">
@@ -140,9 +139,9 @@
                 :class="[
                   'flex items-center px-4 py-2 border rounded-lg transition',
                   selectedMainCurrency === option.value
-                    ? 'bg-indigo-500 text-white'
+                    ? 'bg-gray-500 text-white'
                     : 'bg-gray-200 text-gray-700',
-                  'hover:bg-indigo-300 hover:text-white'
+                  'hover:bg-gray-300 hover:text-white'
                 ]"
                 @click="selectCurrency(option.value)"
                 :disabled="option.disabled"
@@ -157,7 +156,7 @@
             </div>
             <div class="mt-6 flex justify-end">
               <button
-                class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
                 @click="saveMainCurrency"
               >
                 Guardar
