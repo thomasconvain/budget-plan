@@ -138,66 +138,40 @@
       </div>
     </div>
 
-    <!-- Etapa 3: Fechas -->
+    <!-- Etapa 3: Día de facturación (solo tarjetas de crédito) -->
     <div v-if="stage === 3" class="my-1 flex flex-col gap-4">
-  <!-- Fecha de inicio -->
-  <div class="flex flex-col w-full">
-    <label for="ValidFrom" class="block text-sm font-medium leading-6 text-gray-900">
-      Fecha de inicio
-    </label>
-    <input
-      v-model="validFrom"
-      name="validFrom"
-      type="date"
-      class="block w-full px-3 py-2 my-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
-      placeholder="Válido desde"
-    />
-  </div>
+      <div class="flex flex-col w-full">
+        <label class="block text-sm font-medium leading-6 text-gray-900">
+          Día de facturación
+        </label>
+        <p class="text-sm text-gray-500 mb-2">
+          Indica el día del mes en que se factura tu tarjeta. Cada mes se renovará automáticamente.
+        </p>
+        <select
+          v-model.number="billingDay"
+          class="block w-full px-3 py-2 my-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm">
+          <option v-for="day in 31" :key="day" :value="day">{{ day }}</option>
+        </select>
+      </div>
 
-  <!-- Fecha de término -->
-  <div class="flex flex-col w-full">
-    <div class="flex items-center justify-between">
-      <label for="ValidUntil" class="block text-sm font-medium leading-6 text-gray-900">
-        Fecha de facturación
-      </label>
-      <div class="flex items-center">
-        <input
-          v-model="disableValidUntil"
-          type="checkbox"
-          id="disableValidUntil"
-          class="h-4 w-4 text-gray-600 border-gray-300 focus:ring-gray-500"
-        />
-        <label for="disableValidUntil" class="ml-2 text-sm text-gray-700">Sin fecha de facturación</label>
+      <!-- Botones de navegación -->
+      <div class="flex justify-between">
+        <button @click="previousStage" class="flex gap-2 items-center mt-2 text-gray-600 hover:text-gray-800">
+          <ArrowLeftIcon class="h-4 w-4" aria-hidden="true" />
+          Atrás
+        </button>
+        <button
+          @click="handleSaveGoal"
+          :disabled="!canSaveGoal"
+          class="mt-2 px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:bg-gray-400">
+          <svg v-if="isLoading" aria-hidden="true" role="status" class="inline w-4 h-4 me-3 text-white animate-spin" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="#E5E7EB"/>
+            <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentColor"/>
+          </svg>
+          Crear {{ type?.toLowerCase() }}
+        </button>
       </div>
     </div>
-    <input
-      v-model="validUntil"
-      :disabled="disableValidUntil"
-      :min="validFrom"
-      type="date"
-      class="block w-full my-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
-      placeholder="Válido hasta"
-    />
-  </div>
-
-  <!-- Botones de navegación -->
-  <div class="flex justify-between">
-    <button @click="previousStage" class="flex gap-2 items-center mt-2 text-gray-600 hover:text-gray-800">
-      <ArrowLeftIcon class="h-4 w-4" aria-hidden="true" />
-      Atrás
-    </button>
-    <button
-      @click="handleSaveGoal"
-      :disabled="!canSaveGoal"
-      class="mt-2 px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:bg-gray-400">
-      <svg v-if="isLoading" aria-hidden="true" role="status" class="inline w-4 h-4 me-3 text-white animate-spin" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="#E5E7EB"/>
-        <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentColor"/>
-      </svg>
-      Crear {{ type?.toLowerCase() }}
-    </button>
-  </div>
-</div>
 
   </div>
 </template>
@@ -212,6 +186,7 @@ import { useRouter } from 'vue-router';
 import { ArrowRightIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline';
 import CountryFlag from 'vue-country-flag-next';
 import { deriveKey, encrypt } from '@/services/encryption';
+import { calculateBillingPeriod } from '@/utils/billingPeriod';
 
 
 
@@ -222,10 +197,7 @@ const type=ref(null);
 const availableAmount = ref(null);
 const currentBalanceOnAccount = ref(null);
 const mainCurrency = ref('CLP');
-const today = new Date().toISOString().split('T')[0];
-const validFrom = ref(today);
-const validUntil = ref('');
-const disableValidUntil = ref(false); // Controla si la fecha de término está deshabilitada
+const billingDay = ref(1);
 const options = ref([
   { value: 'CLP', text: 'Pesos Chilenos', countryCode: 'CL' },
   { value: 'COP', text: 'Pesos Colombianos', countryCode: 'CO' },
@@ -244,13 +216,8 @@ const isLoading = ref(false);
 
 const stage = ref(1);
 
-const computedDisableValidUntil = computed(() => type.value === 'Cuenta bancaria');
 const computedAvailableAmount = computed(() => type.value === 'Cuenta bancaria' ? 0 : null);
 const computedCurrentBalanceOnAccount = computed(() => type.value === 'Tarjeta de crédito' ? 0 : null);
-
-watch(computedDisableValidUntil, (newValue) => {
-  disableValidUntil.value = newValue;
-});
 
 watch(computedAvailableAmount, (newValue) => {
   availableAmount.value = newValue;
@@ -263,7 +230,7 @@ watch(computedCurrentBalanceOnAccount, (newValue) => {
 const canProceedToNextStage = computed(() => {
   if (stage.value === 1) return type.value !== null && title.value;
   if (stage.value === 2) return mainCurrency.value && (availableAmount.value || currentBalanceOnAccount.value);
-  if (stage.value === 3) return validFrom.value && (validUntil.value || disableValidUntil.value);
+  if (stage.value === 3) return billingDay.value >= 1 && billingDay.value <= 31;
   return false;
 });
 
@@ -290,32 +257,41 @@ const handleSaveGoal = async () => {
   if (user && canSaveGoal.value) {
     const key = deriveKey(user.uid);
 
-    const availableAmountValue = availableAmount.value;
-    const encryptedAvailableAmount = encrypt(availableAmountValue.toString(), key);
-    const currentBalanceOnAccountValue = currentBalanceOnAccount.value;
-    const encryptedCurrentBalanceOnAccount = encrypt(currentBalanceOnAccountValue.toString(), key);
     const encryptedType = encrypt(type.value, key);
     const encryptedTitle = encrypt(title.value, key);
     const encryptedMainCurrency = encrypt(mainCurrency.value, key);
+    const encryptedAvailableAmount = encrypt((availableAmount.value || 0).toString(), key);
+    const encryptedCurrentBalanceOnAccount = encrypt((currentBalanceOnAccount.value || 0).toString(), key);
 
-    await addDoc(collection(db, 'goals'), {
+    const goalData = {
       type: encryptedType,
       title: encryptedTitle,
       userId: user.uid,
       availableAmount: encryptedAvailableAmount,
       currentBalanceOnAccount: encryptedCurrentBalanceOnAccount,
       mainCurrency: encryptedMainCurrency,
-      validFrom: Timestamp.fromDate(new Date(validFrom.value)),
-      validUntil: validUntil.value ? Timestamp.fromDate(new Date(validUntil.value)) : null,
-    });
+    };
+
+    if (type.value === 'Tarjeta de crédito') {
+      const { validFrom, validUntil } = calculateBillingPeriod(billingDay.value);
+      goalData.validFrom = Timestamp.fromDate(validFrom);
+      goalData.validUntil = Timestamp.fromDate(validUntil);
+      goalData.billingDay = billingDay.value;
+      goalData.isRecurring = true;
+      goalData.isArchived = false;
+    } else {
+      goalData.validFrom = Timestamp.fromDate(new Date());
+      goalData.validUntil = null;
+    }
+
+    await addDoc(collection(db, 'goals'), goalData);
 
     goals.value = await fetchGoals();
     type.value = '';
     title.value = '';
     availableAmount.value = '';
     currentBalanceOnAccount.value = '';
-    validFrom.value = '';
-    validUntil.value = '';
+    billingDay.value = 1;
     stage.value = 1;
 
     router.push('/dashboard');

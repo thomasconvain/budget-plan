@@ -6,22 +6,27 @@
 
     <div class="mt-6 flex items-center justify-between">
       <div>
-        <h1 class="text-2xl text-white font-semibold">
-          🚀 {{ goal.type }}
+        <h1 class="text-2xl text-white font-semibold flex items-center gap-2">
+          {{ goal.title }}
           <span
             class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-700/10">
             {{ goal.mainCurrency }}
           </span>
         </h1>
-        <p class="h-[20px] text-sm ml-9 text-slate-300">{{ goal.title }}</p>
       </div>
-      <div v-if="!isNativeApp" class="flex justify-end">
-      <button
-        class="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-50 border border-transparent rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-        @click="goBack">
-        Volver
-      </button>
-    </div>
+      <div class="flex items-center gap-2">
+        <button
+          class="px-4 py-2 bg-gray-50 border border-transparent rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          @click="openSettings">
+          <Cog6ToothIcon class="h-4 w-4 text-black" />
+        </button>
+        <button
+          v-if="!isNativeApp"
+          class="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-50 border border-transparent rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          @click="goBack">
+          Volver
+        </button>
+      </div>
     </div>
 
     <!-- Stats bar -->
@@ -36,7 +41,14 @@
         </strong>
       </div>
       <div
-        v-if="goal.validUntil"
+        v-if="goal.billingDay"
+        class="min-w-fit inline-flex items-center gap-1 px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-300">
+        <CalendarIcon class="h-4 w-4" />
+        Facturación día
+        <strong class="text-white">{{ goal.billingDay }}</strong>
+      </div>
+      <div
+        v-else-if="goal.validUntil"
         class="min-w-fit inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-300">
         <CalendarIcon class="h-4 w-4" />
         <strong class="text-white mx-1">{{ formatDate(goal.validFrom) }}</strong>
@@ -182,6 +194,62 @@
       </div>
     </div>
     <p v-else class="text-sm text-slate-400">Aún no tienes movimientos ingresados</p>
+
+    <!-- Settings: bottom sheet (mobile) / modal (desktop) -->
+    <Transition name="overlay">
+      <div v-if="showSettings" class="fixed inset-0 bg-black/40 z-40" @click="showSettings = false"></div>
+    </Transition>
+    <Transition name="sheet">
+      <div
+        v-if="showSettings"
+        class="settings-panel fixed z-50 bg-white shadow-2xl p-6 overflow-y-auto
+               inset-x-0 bottom-0 rounded-t-2xl max-h-[80vh]
+               md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:w-full md:max-w-md md:max-h-[90vh]">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-lg font-semibold text-gray-900">Configuración</h2>
+          <XMarkIcon class="h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-600" @click="showSettings = false" />
+        </div>
+
+        <div class="flex flex-col gap-5">
+          <!-- Nombre -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <input
+              v-model="settingsTitle"
+              type="text"
+              class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
+            />
+          </div>
+
+          <!-- Día de facturación (solo tarjetas de crédito) -->
+          <div v-if="goal.billingDay || goal.type === 'Tarjeta de crédito'">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Día de facturación</label>
+            <select
+              v-model.number="settingsBillingDay"
+              class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm">
+              <option v-for="day in 31" :key="day" :value="day">{{ day }}</option>
+            </select>
+          </div>
+
+          <!-- Cupo de gasto máximo (solo tarjetas de crédito) -->
+          <div v-if="goal.type === 'Tarjeta de crédito'">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Cupo de gasto máximo</label>
+            <input
+              v-model.number="settingsAvailableAmount"
+              type="number"
+              class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
+            />
+          </div>
+        </div>
+
+        <button
+          @click="saveSettings"
+          :disabled="savingSettings"
+          class="mt-6 w-full px-4 py-3 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 transition">
+          {{ savingSettings ? 'Guardando...' : 'Guardar cambios' }}
+        </button>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -195,6 +263,7 @@ import LoadingSpinner from '../components/LoadingSpinner.vue';
 import { formatDate, formatDateToLargeString } from '../utils/dateFormatter';
 import { formatNumber } from '../utils/currencyFormatters';
 import { convertToMainCurrency } from '../utils/currencyConverter';
+import { calculateBillingPeriod } from '../utils/billingPeriod';
 import {
   TitleComponent,
   TooltipComponent,
@@ -212,7 +281,8 @@ import {
   TrashIcon,
   ArrowUpIcon,
   ArrowDownIcon,
-  ChartPieIcon
+  ChartPieIcon,
+  Cog6ToothIcon
 } from '@heroicons/vue/24/outline';
 import * as OutlineIcons from '@heroicons/vue/24/outline';
 import { Capacitor } from '@capacitor/core';
@@ -446,6 +516,48 @@ const groupedPayments = computed(() => {
     }, {});
 });
 
+// Settings bottom sheet
+const showSettings = ref(false);
+const settingsTitle = ref('');
+const settingsBillingDay = ref(1);
+const settingsAvailableAmount = ref(0);
+const savingSettings = ref(false);
+
+const openSettings = () => {
+  settingsTitle.value = goal.value.title;
+  settingsBillingDay.value = goal.value.billingDay || 1;
+  settingsAvailableAmount.value = goal.value.availableAmount || 0;
+  showSettings.value = true;
+};
+
+const saveSettings = async () => {
+  savingSettings.value = true;
+  try {
+    const updates = {
+      title: encrypt(settingsTitle.value.trim(), key),
+    };
+
+    if (goal.value.type === 'Tarjeta de crédito') {
+      updates.availableAmount = encrypt(settingsAvailableAmount.value.toString(), key);
+
+      if (settingsBillingDay.value !== goal.value.billingDay) {
+        const { validFrom, validUntil } = calculateBillingPeriod(settingsBillingDay.value);
+        updates.billingDay = settingsBillingDay.value;
+        updates.validFrom = Timestamp.fromDate(validFrom);
+        updates.validUntil = Timestamp.fromDate(validUntil);
+      }
+    }
+
+    await updateDoc(doc(db, 'goals', goal.value.id), updates);
+    showSettings.value = false;
+    await fetchGoalDetails(goal.value.id);
+  } catch (error) {
+    console.error('Error al guardar configuración:', error);
+  } finally {
+    savingSettings.value = false;
+  }
+};
+
 // Save balance edits
 const toggleBalanceEdit = () => (balanceReadyToEdit.value = !balanceReadyToEdit.value);
 const saveEditedBalance = async () => {
@@ -546,12 +658,17 @@ onMounted(() => {
       await fetchPaymentsForGoal(id);
       isLoading.value = false;
       
-      // Emitir la posición del último card después de que se monte el componente
+      // Emitir la posición del último card después de que el browser haya pintado
       nextTick(() => {
-        if (lastCardRef.value) {
-          const rect = lastCardRef.value.getBoundingClientRect();
-          emit('last-card-position', rect.top);
-        }
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (lastCardRef.value) {
+              const rect = lastCardRef.value.getBoundingClientRect();
+              const cardMidpoint = rect.top + rect.height / 2;
+              emit('last-card-position', cardMidpoint);
+            }
+          });
+        });
       });
     }
   });
@@ -559,7 +676,40 @@ onMounted(() => {
 </script>
 
 <style>
-/* ... tu CSS personalizado ... */
+/* Overlay transition */
+.overlay-enter-active,
+.overlay-leave-active {
+  transition: opacity 0.25s ease;
+}
+.overlay-enter-from,
+.overlay-leave-to {
+  opacity: 0;
+}
+
+/* Mobile: slide up from bottom */
+.sheet-enter-active,
+.sheet-leave-active {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.sheet-enter-from,
+.sheet-leave-to {
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+/* Desktop: scale + fade from center (override slide) */
+@media (min-width: 768px) {
+  .sheet-enter-from,
+  .sheet-leave-to {
+    transform: translate(-50%, -50%) scale(0.95);
+    opacity: 0;
+  }
+  .sheet-enter-to,
+  .sheet-leave-from {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
 
 @keyframes slideIn {
   from {

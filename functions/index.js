@@ -6,6 +6,8 @@ const apiKey = functions.config().exchangerate.api_key;
 const admin = require("firebase-admin");
 admin.initializeApp();
 
+const billingModule = require("./billingPeriod");
+
 // Función para obtener la tasa de conversión
 exports.getConversionRate = functions.https.onRequest((req, res) => {
   cors(req, res, async () => { // Habilita CORS para esta función
@@ -201,6 +203,93 @@ exports.scheduleDailyConversionRates = functions
       console.log(
           "📅 scheduleDailyConversionRates: lote completado para",
           dateString,
+      );
+      return null;
+    });
+
+/**
+ * Cloud Function programada que corre todos los días a las 10:00 UTC.
+ * Busca tarjetas de crédito recurrentes cuyo periodo de facturación haya
+ * terminado, las archiva y crea un nuevo periodo con balance en 0.
+ */
+exports.autoRenewCreditCards = functions
+    .pubsub
+    .schedule("0 10 * * *") // 10:00 UTC todos los días
+    .timeZone("UTC")
+    .onRun(async () => {
+      const db = admin.firestore();
+      const now = new Date();
+
+      // 1) Consultar goals recurrentes no archivados
+      const snapshot = await db.collection("goals")
+          .where("isRecurring", "==", true)
+          .where("isArchived", "==", false)
+          .get();
+
+      if (snapshot.empty) {
+        console.log("autoRenewCreditCards: No hay tarjetas recurrentes.");
+        return null;
+      }
+
+      const batch = db.batch();
+      let renewedCount = 0;
+
+      for (const docSnap of snapshot.docs) {
+        const data = docSnap.data();
+
+        // Verificar que validUntil ya pasó
+        if (!data.validUntil) continue;
+        const validUntilDate = data.validUntil.toDate();
+        if (now <= validUntilDate) continue;
+
+        // 2) Archivar el goal actual
+        batch.update(docSnap.ref, {isArchived: true});
+
+        // 3) Calcular el siguiente periodo
+        const nextPeriod = billingModule.calculateNextBillingPeriod(
+            data.billingDay,
+            validUntilDate,
+        );
+        const {validFrom, validUntil} = nextPeriod;
+
+        // 4) Balance reseteado a "0" (plain text).
+        // El cliente usa tryDecrypt que hace fallback
+        // al valor plano si no puede desencriptar.
+        const encryptedZeroBalance = "0";
+
+        // 5) Crear nuevo goal para el siguiente periodo
+        const newGoalRef = db.collection("goals").doc();
+        batch.set(newGoalRef, {
+          // Campos encriptados copiados tal cual
+          type: data.type,
+          title: data.title,
+          availableAmount: data.availableAmount,
+          mainCurrency: data.mainCurrency,
+          // Balance reseteado
+          currentBalanceOnAccount: encryptedZeroBalance,
+          // Campos planos
+          userId: data.userId,
+          billingDay: data.billingDay,
+          isRecurring: true,
+          isArchived: false,
+          // Nuevas fechas del periodo
+          validFrom: admin.firestore.Timestamp.fromDate(validFrom),
+          validUntil: admin.firestore.Timestamp.fromDate(validUntil),
+        });
+
+        renewedCount++;
+        console.log(
+            `✅ Tarjeta ${docSnap.id} archivada → nuevo periodo: ` +
+            `${validFrom.toISOString()} - ${validUntil.toISOString()}`,
+        );
+      }
+
+      if (renewedCount > 0) {
+        await batch.commit();
+      }
+
+      console.log(
+          `📅 autoRenewCreditCards: ${renewedCount} tarjetas renovadas.`,
       );
       return null;
     });

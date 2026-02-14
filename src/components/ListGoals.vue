@@ -23,28 +23,22 @@
               <CreditCardIcon class="h-6 w-6" aria-hidden="true" />
               <div class="ml-4">
                 <p class="text-sm font-medium text-gray-900">{{ goal.title }}</p>
-                <p 
-                  v-if="calculateDaysRemaining(goal.validUntil?.toDate()) > 0"
+                <p
+                  v-if="goal.billingDay"
                   class="text-sm text-gray-500">
-                  Se factura en {{calculateDaysRemaining(goal.validUntil.toDate()) }}  {{ calculateDaysRemaining(goal.validUntil.toDate()) <= 1 ? 'día' : 'días' }}
+                  Se factura el día {{ goal.billingDay }}
+                  <template v-if="goal.validUntil && calculateDaysRemaining(goal.validUntil.toDate()) > 0">
+                    ({{ calculateDaysRemaining(goal.validUntil.toDate()) }} {{ calculateDaysRemaining(goal.validUntil.toDate()) <= 1 ? 'día' : 'días' }})
+                  </template>
                 </p>
-                <p 
-                  v-else-if="goal.type !== 'Tarjeta de crédito' || goal.validUntil === null"
+                <p
+                  v-else-if="goal.validUntil && calculateDaysRemaining(goal.validUntil?.toDate()) > 0"
                   class="text-sm text-gray-500">
+                  Se factura en {{ calculateDaysRemaining(goal.validUntil.toDate()) }} {{ calculateDaysRemaining(goal.validUntil.toDate()) <= 1 ? 'día' : 'días' }}
+                </p>
+                <p v-else class="text-sm text-gray-500">
                   Sin fecha de facturación
                 </p>
-                <span 
-                  v-else
-                  class="text-sm text-gray-500 flex items-center gap-x-2">
-                  <p>
-                    Se ha facturado esta tarjeta
-                  </p>
-                  <button
-                    class="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-50 border border-transparent rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-                    @click.stop.prevent="archiveGoal(goal.id)">
-                      Archivar
-                  </button>
-                </span>
               </div>
               <div class="text-right ml-auto">
                 <p class="text-md text-gray-800 font-semibold flex items-center gap-x-2">
@@ -69,7 +63,7 @@
     </div>
     <p v-else class="my-8 text-gray-400">Aún no tienes tarjeta agregada</p>
     <div v-if="archivedGoals.length > 0" class="max-w-4xl mx-auto">
-      <p class="my-2 text-gray-400">Tu tarjetas archivadas:</p>
+      <p class="my-2 text-gray-400">Tu facturaciones pasadas:</p>
       <ul role="list" class="">
         <li v-for="goal in archivedGoals" :key="goal.id" class="mb-4">
           <div class="flex items-center justify-between z-2 relative px-4 py-4 bg-white shadow-lg rounded-lg hover:bg-gray-50">
@@ -177,6 +171,36 @@
         </div>
       </Dialog>
     </TransitionRoot>
+
+    <!-- Modal de migración: pedir día de facturación a tarjetas existentes -->
+    <TransitionRoot :show="showMigrationModal" as="modal">
+      <Dialog @close="() => {}">
+        <DialogOverlay class="fixed inset-0 bg-black/30" />
+        <div class="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel class="bg-white p-6 rounded-lg min-w-[300px] max-w-[500px]">
+            <DialogTitle class="text-lg font-semibold">Configura tu tarjeta</DialogTitle>
+            <p class="text-sm text-gray-500 mt-2">
+              Tu tarjeta <strong>{{ migrationGoal?.title }}</strong> necesita un día de facturación para renovarse automáticamente cada mes.
+            </p>
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Día de facturación</label>
+              <select
+                v-model.number="migrationBillingDay"
+                class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm">
+                <option v-for="day in 31" :key="day" :value="day">{{ day }}</option>
+              </select>
+            </div>
+            <div class="mt-6 flex justify-end">
+              <button
+                class="px-4 py-2 bg-gray-800 text-white text-sm rounded-lg hover:bg-gray-700"
+                @click="saveMigration">
+                Guardar
+              </button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+    </TransitionRoot>
   </div>
 </template>
 
@@ -185,14 +209,14 @@ import { ref, onMounted, computed } from 'vue';
 import { Dialog, DialogOverlay, DialogPanel, DialogTitle, TransitionRoot } from '@headlessui/vue'
 import CountryFlag from 'vue-country-flag-next';
 import { ArrowUpIcon,ArrowDownIcon, CurrencyDollarIcon, CreditCardIcon, TrashIcon, PlusCircleIcon } from '@heroicons/vue/24/outline';
-import { getFirestore, collection, getDocs, getDoc, updateDoc, query, where, deleteDoc, doc, writeBatch } from 'firebase/firestore';
+import { getFirestore, Timestamp, collection, getDocs, getDoc, updateDoc, query, where, deleteDoc, doc, writeBatch } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import {fetchGoals, fetchArchivedGoals} from '@/utils/business/goals.js'
 import { fetchUser } from '@/utils/business/users.js';
 import LoadingSpinner from '../components/LoadingSpinner.vue'
 import { formatNumber } from '../utils/currencyFormatters.js';
-import { formatDate } from '../utils/dateFormatter.js';
 import { convertToMainCurrency } from '../utils/currencyConverter';
+import { calculateBillingPeriod } from '@/utils/billingPeriod';
 
 
 const auth = getAuth();
@@ -237,6 +261,47 @@ const loadArchivedGoals = async (reset = false) => {
   loadingMoreArchived.value = false;
 };
 
+// Migración: tarjetas sin billingDay
+const showMigrationModal = ref(false);
+const migrationGoal = ref(null);
+const migrationBillingDay = ref(15);
+const goalsToMigrate = ref([]);
+
+const checkMigration = () => {
+  goalsToMigrate.value = creditCardGoals.value.filter(g => !g.billingDay);
+  if (goalsToMigrate.value.length > 0) {
+    migrationGoal.value = goalsToMigrate.value[0];
+    migrationBillingDay.value = 15;
+    showMigrationModal.value = true;
+  }
+};
+
+const saveMigration = async () => {
+  if (!migrationGoal.value) return;
+
+  const { validFrom, validUntil } = calculateBillingPeriod(migrationBillingDay.value);
+
+  await updateDoc(doc(db, 'goals', migrationGoal.value.id), {
+    billingDay: migrationBillingDay.value,
+    isRecurring: true,
+    isArchived: false,
+    validFrom: Timestamp.fromDate(validFrom),
+    validUntil: Timestamp.fromDate(validUntil),
+  });
+
+  // Quitar de la lista de pendientes
+  goalsToMigrate.value.shift();
+
+  if (goalsToMigrate.value.length > 0) {
+    // Migrar la siguiente tarjeta
+    migrationGoal.value = goalsToMigrate.value[0];
+    migrationBillingDay.value = 15;
+  } else {
+    showMigrationModal.value = false;
+    migrationGoal.value = null;
+    await recalculateTotals();
+  }
+};
 
 onMounted(() => {
   onAuthStateChanged(auth, async user => {
@@ -246,9 +311,10 @@ onMounted(() => {
     userDocRef.value = doc(db, 'users', user.uid)
     const snap = await getDoc(userDocRef.value)
     if (!snap.exists() || !snap.data().mainCurrency) {
-      // si no tiene mainCurrency, abrimos el modal
       showSelectMainCurrencyModal.value = true
     }
+    // Verificar si hay tarjetas que necesitan migración
+    checkMigration()
   })
 })
 
@@ -320,19 +386,6 @@ const handleDeleteGoal = async (goalId) => {
     goals.value = await recalculateTotals()();
   }
 };
-
-const archiveGoal = async (goalId) => {
-  try {
-    const goalRef = doc(db, 'goals', goalId)
-    await updateDoc(goalRef, { isArchived: true })
-    console.log(`Goal ${goalId} archivado correctamente`)
-    // aquí podrías emitir un evento o actualizar un state local
-    // Actualizar la lista de presupuestos después de eliminar
-    goals.value = await recalculateTotals()();
-  } catch (error) {
-    console.error('Error archivando goal:', error)
-  }
-}
 
 const calculateDaysRemaining = (targetDate) => {
   const today = new Date();

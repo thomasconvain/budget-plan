@@ -9,8 +9,8 @@ android {
 
 apply from: "../capacitor-cordova-android-plugins/cordova.variables.gradle"
 dependencies {
-    implementation project(':southdevs-capacitor-google-auth')
     implementation project(':revenuecat-purchases-capacitor')
+    implementation project(':southdevs-capacitor-google-auth')
 
 }
 

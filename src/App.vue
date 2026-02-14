@@ -4,7 +4,7 @@
     <div class="z-50">
       <NavBar class="absolute w-full"/>
     </div>
-    <div class="pt-24 relative">
+    <div ref="bgContainer" class="pt-24 relative">
       <div class="absolute inset-x-0 top-0 bg-gray-950 rounded-b-3xl"
            :style="{
              height: $route.path === '/dashboard' ? '145px' : 
@@ -33,7 +33,7 @@ import FooterSection from './components/FooterSection.vue'
 import LoadingSpinner from './components/LoadingSpinner.vue'
 import { Capacitor } from '@capacitor/core';
 import { useStore } from 'vuex';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import MobileMenu from './components/MobileMenu.vue';
 
@@ -41,11 +41,18 @@ const isNativeApp = Capacitor.isNativePlatform();
 const store = useStore();
 const loading = computed(() => store.getters.loading);
 const backgroundHeight = ref(290); // altura por defecto
+const bgContainer = ref(null);
 const route = useRoute();
 
-const updateBackgroundHeight = (position) => {
-  if (route.path.startsWith('/goal')) {
-    backgroundHeight.value = position + 50; // 50px es la mitad aproximada de una card
+// Resetear la altura del fondo al navegar entre vistas
+watch(() => route.path, () => {
+  backgroundHeight.value = 290;
+});
+
+const updateBackgroundHeight = (cardBottom) => {
+  if (route.path.startsWith('/goal') && bgContainer.value) {
+    const containerTop = bgContainer.value.getBoundingClientRect().top;
+    backgroundHeight.value = cardBottom - containerTop;
   }
 };
 </script>
