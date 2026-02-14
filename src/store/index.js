@@ -3,7 +3,7 @@ import { createUserWithEmailAndPassword, signInWithRedirect, signInWithCredentia
 import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
 import { auth, db } from '@/firebase';
 import { Capacitor } from '@capacitor/core';
-import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+import { GoogleAuth } from '@southdevs/capacitor-google-auth';
 import router from '@/router'; 
 
 const store = createStore({
