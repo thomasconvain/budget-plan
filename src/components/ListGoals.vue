@@ -68,15 +68,16 @@
       </ul>
     </div>
     <p v-else class="my-8 text-gray-400">Aún no tienes tarjeta agregada</p>
-    <div v-if="archivedCreditCardGoals.length > 0" class="max-w-4xl mx-auto">
+    <div v-if="archivedGoals.length > 0" class="max-w-4xl mx-auto">
       <p class="my-2 text-gray-400">Tu tarjetas archivadas:</p>
       <ul role="list" class="">
-        <li v-for="goal in archivedCreditCardGoals" :key="goal.id" class="mb-4">
+        <li v-for="goal in archivedGoals" :key="goal.id" class="mb-4">
           <div class="flex items-center justify-between z-2 relative px-4 py-4 bg-white shadow-lg rounded-lg hover:bg-gray-50">
             <router-link :to="`/goal/${goal.id}`" class="flex items-center flex-1">
               <CreditCardIcon class="h-6 w-6" aria-hidden="true" />
               <div class="ml-4">
                 <p class="text-sm font-medium text-gray-900">{{ goal.title }}</p>
+                <p v-if="goal.validUntil" class="text-xs text-gray-400">{{ goal.validUntil.toDate().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) }}</p>
               </div>
               <div class="text-right ml-auto">
                 <p class="text-md text-gray-800 font-semibold flex items-center gap-x-2">
@@ -92,6 +93,16 @@
           </div>
         </li>
       </ul>
+      <div v-if="hasMoreArchivedGoals" class="flex items-center gap-3 mt-2">
+        <div class="flex-1 h-px bg-gray-200"></div>
+        <button
+          @click="loadArchivedGoals()"
+          :disabled="loadingMoreArchived"
+          class="px-4 py-1.5 text-xs font-medium text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-300 rounded-full transition disabled:opacity-50">
+          {{ loadingMoreArchived ? 'Cargando...' : 'Ver anteriores' }}
+        </button>
+        <div class="flex-1 h-px bg-gray-200"></div>
+      </div>
     </div>
     <h1 class="text-2xl font-semibold	mb-4 mt-16">Tus cuentas bancarias</h1>
     <div v-if="bankAccountGoals.length > 0" class="max-w-4xl mx-auto">
@@ -176,10 +187,11 @@ import CountryFlag from 'vue-country-flag-next';
 import { ArrowUpIcon,ArrowDownIcon, CurrencyDollarIcon, CreditCardIcon, TrashIcon, PlusCircleIcon } from '@heroicons/vue/24/outline';
 import { getFirestore, collection, getDocs, getDoc, updateDoc, query, where, deleteDoc, doc, writeBatch } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import {fetchGoals} from '@/utils/business/goals.js'
+import {fetchGoals, fetchArchivedGoals} from '@/utils/business/goals.js'
 import { fetchUser } from '@/utils/business/users.js';
 import LoadingSpinner from '../components/LoadingSpinner.vue'
 import { formatNumber } from '../utils/currencyFormatters.js';
+import { formatDate } from '../utils/dateFormatter.js';
 import { convertToMainCurrency } from '../utils/currencyConverter';
 
 
@@ -204,8 +216,26 @@ const goals = ref([]);
 const goalsTotalBalance = ref(0);
 
 const creditCardGoals = computed(() => goals.value.filter(goal => goal.type === 'Tarjeta de crédito' && goal.isArchived !== true));
-const archivedCreditCardGoals = computed(() => goals.value.filter(goal => goal.type === 'Tarjeta de crédito' && goal.isArchived === true));
 const bankAccountGoals = computed(() => goals.value.filter(goal => goal.type === 'Cuenta bancaria'));
+
+// Paginación real de tarjetas archivadas desde Firestore
+const archivedGoals = ref([]);
+const archivedLastDoc = ref(null);
+const hasMoreArchivedGoals = ref(false);
+const loadingMoreArchived = ref(false);
+
+const loadArchivedGoals = async (reset = false) => {
+  if (reset) {
+    archivedGoals.value = [];
+    archivedLastDoc.value = null;
+  }
+  loadingMoreArchived.value = true;
+  const result = await fetchArchivedGoals(3, archivedLastDoc.value);
+  archivedGoals.value = [...archivedGoals.value, ...result.goals];
+  archivedLastDoc.value = result.lastDoc;
+  hasMoreArchivedGoals.value = result.hasMore;
+  loadingMoreArchived.value = false;
+};
 
 
 onMounted(() => {
@@ -262,6 +292,10 @@ const recalculateTotals = async () => {
   const creditTotal = creditAmounts.reduce((sum, v) => sum + v, 0);
   const bankTotal   = bankAmounts.reduce((sum, v) => sum + v, 0);
   goalsTotalBalance.value = bankTotal - creditTotal;
+
+  // Cargar las primeras 3 tarjetas archivadas
+  await loadArchivedGoals(true);
+
   isLoading.value = false;
 };
 

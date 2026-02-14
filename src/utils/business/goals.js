@@ -5,7 +5,10 @@ import {
   collection,
   getDocs,
   query,
-  where
+  where,
+  orderBy,
+  limit,
+  startAfter
 } from 'firebase/firestore';
 import { deriveKey, decrypt } from '@/services/encryption';
 
@@ -71,4 +74,60 @@ export const fetchGoals = async () => {
   });
 
   return result;
+};
+
+/**
+ * Fetch de tarjetas archivadas con paginación real desde Firestore.
+ * @param {number} pageSize - Cantidad de documentos por página
+ * @param {DocumentSnapshot|null} lastDoc - Último documento de la página anterior (cursor)
+ * @returns {{ goals: Array, lastDoc: DocumentSnapshot|null, hasMore: boolean }}
+ */
+export const fetchArchivedGoals = async (pageSize = 3, lastDoc = null) => {
+  const user = auth.currentUser;
+  if (!user) return { goals: [], lastDoc: null, hasMore: false };
+
+  const key = deriveKey(user.uid);
+
+  const constraints = [
+    collection(db, 'goals'),
+    where('userId', '==', user.uid),
+    where('isArchived', '==', true),
+    orderBy('validUntil', 'desc'),
+    limit(pageSize),
+  ];
+
+  if (lastDoc) {
+    constraints.splice(4, 0, startAfter(lastDoc));
+  }
+
+  const q = query(...constraints);
+  const snapshot = await getDocs(q);
+
+  const goals = snapshot.docs.map(doc => {
+    const data = doc.data();
+
+    const title = tryDecrypt(data.title, key);
+    const type = tryDecrypt(data.type, key);
+    const availableAmount = parseFloat(tryDecrypt(data.availableAmount, key));
+    const currentBalanceOnAccount = parseFloat(tryDecrypt(data.currentBalanceOnAccount, key));
+    const mainCurrency = tryDecrypt(data.mainCurrency, key);
+
+    return {
+      id: doc.id,
+      ...data,
+      title,
+      type,
+      availableAmount,
+      currentBalanceOnAccount,
+      mainCurrency,
+    };
+  });
+
+  const lastVisible = snapshot.docs[snapshot.docs.length - 1] || null;
+
+  return {
+    goals,
+    lastDoc: lastVisible,
+    hasMore: snapshot.docs.length === pageSize,
+  };
 };

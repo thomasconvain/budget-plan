@@ -1,5 +1,5 @@
 import { createStore } from 'vuex';
-import { createUserWithEmailAndPassword, signInWithRedirect, signInWithCredential, GoogleAuthProvider, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithPopup, signInWithCredential, GoogleAuthProvider, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
 import { auth, db } from '@/firebase';
 import { Capacitor } from '@capacitor/core';
@@ -61,7 +61,8 @@ const store = createStore({
         } else {
           console.log('Iniciando sesión con Google en la Web...');
           const provider = new GoogleAuthProvider();
-          await signInWithRedirect(auth, provider);
+          const result = await signInWithPopup(auth, provider);
+          console.log('Usuario de Google (Web):', result.user);
         }
         router.push('/dashboard');
       } catch (error) {

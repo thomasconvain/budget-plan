@@ -436,7 +436,12 @@ const groupedPayments = computed(() => {
   return Object.keys(grouped)
     .sort((a, b) => new Date(b) - new Date(a))
     .reduce((acc, key) => {
-      acc[key] = grouped[key];
+      // Dentro de cada fecha, ordenar por hora descendente (más reciente arriba, más antiguo abajo)
+      acc[key] = grouped[key].sort((a, b) => {
+        const dateA = a.date instanceof Timestamp ? a.date.toDate() : new Date(a.date);
+        const dateB = b.date instanceof Timestamp ? b.date.toDate() : new Date(b.date);
+        return dateB - dateA;
+      });
       return acc;
     }, {});
 });
