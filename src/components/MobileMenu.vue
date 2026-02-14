@@ -9,7 +9,7 @@
   <!-- Botón 2 -->
   <button class="flex flex-col items-center text-gray-600 hover:text-gray-600 focus:outline-none">
     <SquaresPlusIcon class="h-4 w-4" aria-hidden="true" />
-    <span class="text-sm" @click="() => { $router.push({ name: 'CreateGoal' }); }">Nuevo presupuesto</span>
+    <span class="text-sm" @click="() => { $router.push({ name: 'CreateGoal' }); }">Agregar</span>
   </button>
 </div>
 

@@ -8,7 +8,7 @@
       <div class="absolute inset-x-0 top-0 bg-gray-950 rounded-b-3xl"
            :style="{
              height: $route.path === '/dashboard' ? '145px' : 
-                    $route.path === '/create-goal/' ? '140px' :
+                    $route.path.startsWith('/create-goal') ? '140px' :
                     $route.path.startsWith('/goal') ? `${backgroundHeight}px` :
                     '385px'
            }">
@@ -22,7 +22,7 @@
         </div>
       </div>
     </div>
-    <MobileMenu v-if="isNativeApp"/>
+    <MobileMenu v-if="isNativeApp && user"/>
     <FooterSection v-if="!isNativeApp" class="bottom-0"/>
   </div>
 </template>
@@ -40,6 +40,7 @@ import MobileMenu from './components/MobileMenu.vue';
 const isNativeApp = Capacitor.isNativePlatform();
 const store = useStore();
 const loading = computed(() => store.getters.loading);
+const user = computed(() => store.getters.user);
 const backgroundHeight = ref(290); // altura por defecto
 const bgContainer = ref(null);
 const route = useRoute();

@@ -1,7 +1,7 @@
 <template>
-  <div class="relative rounded-md shadow-sm">
+  <div class="relative rounded-xl">
     <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-      <span class="text-gray-500 sm:text-sm">{{ currencySymbol }}</span>
+      <span class="text-gray-400 text-sm">{{ currencySymbol }}</span>
     </div>
     <input
       type="text"
@@ -9,17 +9,17 @@
       name="price"
       id="price"
       ref="inputRef"
-      class="block w-full rounded-md border-0 py-2 pl-7 pr-20 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6"
+      class="block w-full h-10 rounded-xl border-0 py-0 pl-7 pr-20 text-gray-900 ring-1 ring-inset ring-gray-200 placeholder:text-gray-300 focus:ring-2 focus:ring-inset focus:ring-gray-400 sm:text-sm"
       :placeholder="placeholder"
     />
-    <div v-if="showSelect" class="absolute inset-y-0 right-0 flex items-center">
+    <div v-if="showSelect" class="absolute inset-y-0 right-2 flex items-center">
       <label for="currency" class="sr-only">Currency</label>
       <select
         :value="currency"
         @input="onInput"
         id="currency"
         name="currency"
-        class="h-full rounded-md border-0 bg-transparent py-0 pl-2 pr-7 text-gray-500 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm"
+        class="h-full rounded-xl border-0 bg-transparent py-0 pl-2 pr-7 text-gray-500 focus:ring-2 focus:ring-inset focus:ring-gray-400 sm:text-sm"
       >
         <option
           v-for="opt in currencyOptions"

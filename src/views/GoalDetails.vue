@@ -5,70 +5,66 @@
   <div v-else>
 
     <div class="mt-6 flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl text-white font-semibold flex items-center gap-2">
-          {{ goal.title }}
-          <span
-            class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-700/10">
-            {{ goal.mainCurrency }}
-          </span>
-        </h1>
+      <div class="min-w-0 flex-1">
+        <p class="text-xs font-medium text-white/50">{{ goal.type }}</p>
+        <h1 class="text-2xl text-white font-bold truncate mt-0.5">{{ goal.title }}</h1>
+        <span class="text-xs font-medium text-white/60">{{ goal.mainCurrency }}</span>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 shrink-0">
         <button
-          class="px-4 py-2 bg-gray-50 border border-transparent rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          class="p-2 bg-white/10 rounded-xl hover:bg-white/20 transition"
           @click="openSettings">
-          <Cog6ToothIcon class="h-4 w-4 text-black" />
+          <Cog6ToothIcon class="h-4 w-4 text-white" />
         </button>
         <button
           v-if="!isNativeApp"
-          class="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-50 border border-transparent rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          class="p-2 bg-white/10 rounded-xl hover:bg-white/20 transition"
           @click="goBack">
-          Volver
+          <ArrowLeftIcon class="h-4 w-4 text-white" />
         </button>
       </div>
     </div>
 
     <!-- Stats bar -->
     <div
-      class="absolute md:relative md:mt-2 md:mb-6 inset-x-0 pt-4 px-8 md:px-0 md:pt-0 pb-2 flex flex-nowrap gap-1 overflow-auto scrollbar-hide">
+      class="absolute md:relative md:mt-3 md:mb-6 inset-x-0 pt-4 px-8 md:px-0 md:pt-0 pb-2 flex flex-nowrap gap-2 overflow-auto scrollbar-hide">
       <div
         v-if="goal.type === 'Tarjeta de crédito'"
-        class="min-w-fit inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-300">
-        Cupo de pago
-        <strong class="ml-1 text-white">
+        class="min-w-fit inline-flex items-center gap-1 px-3 py-1.5 bg-white/10 rounded-xl text-xs font-medium text-white/70">
+        Cupo
+        <strong class="text-white">
           {{ currencySymbol(goal.mainCurrency) }} {{ formatNumber(goal.availableAmount, goal.mainCurrency) }}
         </strong>
       </div>
       <div
         v-if="goal.billingDay"
-        class="min-w-fit inline-flex items-center gap-1 px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-300">
-        <CalendarIcon class="h-4 w-4" />
-        Facturación día
+        class="min-w-fit inline-flex items-center gap-1 px-3 py-1.5 bg-white/10 rounded-xl text-xs font-medium text-white/70">
+        <CalendarIcon class="h-3.5 w-3.5" />
+        Día
         <strong class="text-white">{{ goal.billingDay }}</strong>
       </div>
       <div
         v-else-if="goal.validUntil"
-        class="min-w-fit inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-300">
-        <CalendarIcon class="h-4 w-4" />
-        <strong class="text-white mx-1">{{ formatDate(goal.validFrom) }}</strong>
-        hasta
-        <strong class="text-white ml-1">{{ formatDate(goal.validUntil) }}</strong>
+        class="min-w-fit inline-flex items-center gap-1 px-3 py-1.5 bg-white/10 rounded-xl text-xs font-medium text-white/70">
+        <CalendarIcon class="h-3.5 w-3.5" />
+        <strong class="text-white">{{ formatDate(goal.validFrom) }}</strong>
+        –
+        <strong class="text-white">{{ formatDate(goal.validUntil) }}</strong>
       </div>
-      <div class="min-w-fit inline-flex items-center px-3 py-1 border border-gray-300 rounded-full text-sm font-medium text-gray-800">
-        <InformationCircleIcon class="h-4 w-4 text-gray-300" />
-        <strong class="text-white ml-1">
-          <template v-if="daysRemaining > 0">{{ daysRemaining }} días restantes</template>
-          <template v-else-if="goal.validUntil">Meta terminada</template>
-          <template v-else>Sin fecha de término</template>
+      <div class="min-w-fit inline-flex items-center gap-1 px-3 py-1.5 bg-white/10 rounded-xl text-xs font-medium text-white/70">
+        <InformationCircleIcon class="h-3.5 w-3.5" />
+        <strong class="text-white">
+          <template v-if="daysRemaining > 0">{{ daysRemaining }}d restantes</template>
+          <template v-else-if="goal.validUntil">Terminada</template>
+          <template v-else>Sin plazo</template>
         </strong>
       </div>
     </div>
 
     <!-- Stats cards -->
-    <div class="mt-20 md:mt-0 text-gray-950">
+    <div class="mt-20 md:mt-0">
       <div
-        class="grid grid-cols-1 gap-1"
+        class="grid grid-cols-1 gap-3"
         :class="{
           'lg:grid-cols-1': enabledStats.length === 1,
           'lg:grid-cols-2': enabledStats.length === 2,
@@ -78,55 +74,54 @@
           v-for="(stat, i) in enabledStats"
           :key="stat.id"
           :ref="el => { if (i === enabledStats.length - 1) lastCardRef = el }"
-          class="flex flex-col items-center text-center p-4 bg-white shadow-lg rounded-lg"
-          :class="[i === 0 ? 'responsive-rounded-l' : '', i === enabledStats.length - 1 ? 'responsive-rounded-r' : '']">
+          class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
 
-          <!-- Editable balance -->
-          <div v-if="stat.id === 1" class="w-full flex justify-end">
-            <component
-              :is="balanceReadyToEdit ? XMarkIcon : PencilIcon"
-              class="h-4 w-4 cursor-pointer hover:text-gray-600 z-10"
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-medium text-gray-400">{{ stat.name }}</p>
+            <button
+              v-if="stat.id === 1"
               @click="toggleBalanceEdit"
-            />
+              class="p-1 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 transition">
+              <component
+                :is="balanceReadyToEdit ? XMarkIcon : PencilIcon"
+                class="h-3 w-3"
+              />
+            </button>
           </div>
 
-          <div v-if="stat.id === 1 && balanceReadyToEdit" class="-mt-4 flex items-center justify-center">
+          <div v-if="stat.id === 1 && balanceReadyToEdit">
             <input
               v-model="balanceToUpdate"
               type="number"
-              class="text-2xl font-bold bg-transparent text-center focus:outline-none"
+              class="text-2xl font-bold bg-transparent text-gray-900 focus:outline-none w-full"
               @blur="saveEditedBalance"
               @keydown.enter="saveEditedBalance"
             />
+            <button
+              class="mt-2 w-full px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-xl hover:bg-gray-800 transition"
+              @click="saveEditedBalance">
+              Guardar
+            </button>
           </div>
 
-          <span v-else class="text-2xl font-bold" :class="{'-mt-4': stat.id === 1, 'text-red-800': parseFloat(stat.value) <= 0}">
+          <p v-else class="text-2xl font-bold text-gray-900" :class="{'text-red-600': parseFloat(stat.value) <= 0}">
             {{ currencySymbol(goal.mainCurrency) }} {{ (stat.id === 3 && parseFloat(stat.value) < 0) ? '0 /día' : stat.value }}
-          </span>
-
-          <span class="text-sm text-gray-700 mt-1">{{ stat.name }}</span>
-
-          <button
-            v-if="stat.id === 1 && balanceReadyToEdit"
-            class="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 mt-2"
-            @click="saveEditedBalance">
-            Guardar
-          </button>
+          </p>
         </div>
       </div>
     </div>
 
     <!-- Charts toggle -->
-    <div class="my-6 grid lg:justify-items-end justify-items-center">
+    <div class="my-6 flex justify-center lg:justify-end">
       <button
-        class="flex gap-1 px-4 py-2 text-xs font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+        class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-gray-500 bg-white rounded-xl border border-gray-100 shadow-sm hover:bg-gray-50 transition"
         @click="showCharts = !showCharts">
         <ChartPieIcon class="h-4 w-4" />
-        {{ showCharts ? 'Ocultar' : 'Ver' }} repartición de gastos
+        {{ showCharts ? 'Ocultar' : 'Ver' }} repartición
       </button>
     </div>
 
-    <div v-if="showCharts" class="w-full mt-8 h-96">
+    <div v-if="showCharts" class="w-full h-96 bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
       <v-chart :option="chartOptions" />
     </div>
 
@@ -141,59 +136,68 @@
 
     <div
       v-else
-      class="my-6 flex flex-wrap gap-5 bg-gray-50 text-sm text-gray-400 p-5 rounded-lg">
-      <p>
-        El periodo de tu presupuesto ha terminado, por lo que ya no puedes ingresar nuevos
-        movimientos. Puedes crear un nuevo presupuesto para seguir monitoreando tus finanzas.
+      class="my-6 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+      <p class="text-sm text-gray-400">
+        El periodo de tu presupuesto ha terminado. Ya no puedes ingresar nuevos movimientos.
       </p>
     </div>
 
     <!-- Historic movements -->
-    <h1 class="my-6 text-2xl font-semibold mb-4">Movimientos</h1>
-    <div v-if="payments.length">
-      <div v-for="(dayPayments, date) in groupedPayments" :key="date">
-        <p class="mt-4 text-md font-semibold">{{ formatDateToLargeString(date) }}</p>
-        <ul class="divide-y divide-gray-100">
-          <li v-for="payment in dayPayments" :key="payment.id" 
-              :class="{'animate-slide-in': payment.id.startsWith('temp-')}"
-              class="relative">
-            <div class="flex justify-between gap-x-6 py-2">
-              <div class="flex items-center gap-x-4">
+    <div class="mt-8 mb-6">
+      <h2 class="text-lg font-semibold text-gray-900 mb-3">Movimientos</h2>
+      <div v-if="payments.length" class="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-50">
+        <template v-for="(dayPayments, date) in groupedPayments" :key="date">
+          <div class="px-4 py-2 bg-gray-50/50 first:rounded-t-2xl">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ formatDateToLargeString(date) }}</p>
+          </div>
+          <div
+            v-for="payment in dayPayments"
+            :key="payment.id"
+            :class="{'animate-slide-in': payment.id.startsWith('temp-')}"
+            class="flex items-center gap-3 px-4 py-3 relative">
+            <!-- Icon -->
+            <div
+              class="flex items-center justify-center h-8 w-8 rounded-lg shrink-0"
+              :class="payment.category !== 'Abono a cuenta' ? 'bg-red-50' : 'bg-emerald-50'">
+              <component
+                :is="payment.category !== 'Abono a cuenta' ? ArrowUpIcon : ArrowDownIcon"
+                class="h-4 w-4"
+                :class="payment.category !== 'Abono a cuenta' ? 'text-red-500' : 'text-emerald-500'"
+              />
+            </div>
+            <!-- Info -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5">
                 <component
-                  :is="payment.category !== 'Abono a cuenta' ? ArrowUpIcon : ArrowDownIcon"
-                  :class="payment.category !== 'Abono a cuenta' ? 'h-4 w-4 text-red-600' : 'h-4 w-4 text-green-600'"
+                  :is="getIconComponent(payment.categoryIcon)"
+                  class="h-3.5 w-3.5 text-gray-300 shrink-0"
                 />
-                <div class="flex-auto">
-                  <p class="text-sm font-semibold leading-6 text-gray-900">
-                    {{ currencySymbol(payment.currency) }}{{ payment.currency !== goal.mainCurrency ? payment.currency : ''}} {{ formatNumber(payment.amount, payment.currency) }}
-                  </p>
-                  <p v-if="payment.currency !== goal.mainCurrency" class="mt-1 text-xs text-gray-500">
-                    {{ currencySymbol(goal.mainCurrency) }} {{ formatNumber(payment.convertedAmount, goal.mainCurrency) }}
-                  </p>
-                </div>
+                <p class="text-sm font-medium text-gray-700 truncate">{{ payment.category }}</p>
               </div>
-              <div class="flex items-center gap-2">
-                <div class="flex items-center gap-2 w-6 min-[480px]:w-44 overflow-visible">
-                  <component
-                    :is="getIconComponent(payment.categoryIcon)"
-                    class="h-4 w-4 text-gray-400"
-                  />
-                  <span class="text-sm text-gray-400 truncate max-[480px]:hidden">{{ payment.category }}</span>
-                </div>
-                <button @click="deletePayment(payment)">
-                  <TrashIcon class="h-4 w-4 text-slate-300 hover:text-red-600" />
-                </button>
-              </div>
+              <p v-if="payment.currency !== goal.mainCurrency" class="text-xs text-gray-400 mt-0.5">
+                {{ currencySymbol(goal.mainCurrency) }} {{ formatNumber(payment.convertedAmount, goal.mainCurrency) }}
+              </p>
             </div>
-            <!-- Indicador de estado -->
-            <div v-if="payment.id.startsWith('temp-')" 
-                 class="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-8 bg-gray-500 animate-pulse rounded-full">
+            <!-- Amount + delete -->
+            <div class="flex items-center gap-2 shrink-0">
+              <p class="text-sm font-semibold" :class="payment.category !== 'Abono a cuenta' ? 'text-gray-900' : 'text-emerald-600'">
+                {{ payment.category !== 'Abono a cuenta' ? '-' : '+' }}{{ currencySymbol(payment.currency) }} {{ formatNumber(Math.abs(payment.amount), payment.currency) }}
+              </p>
+              <button
+                @click="deletePayment(payment)"
+                class="p-1 rounded-full border border-gray-200 text-gray-300 hover:text-red-500 hover:border-red-300 hover:bg-red-50 transition">
+                <TrashIcon class="h-3 w-3" />
+              </button>
             </div>
-          </li>
-        </ul>
+            <!-- Pending indicator -->
+            <div v-if="payment.id.startsWith('temp-')"
+                 class="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-gray-400 animate-pulse rounded-full">
+            </div>
+          </div>
+        </template>
       </div>
+      <p v-else class="text-sm text-gray-400">Aún no tienes movimientos ingresados</p>
     </div>
-    <p v-else class="text-sm text-slate-400">Aún no tienes movimientos ingresados</p>
 
     <!-- Settings: bottom sheet (mobile) / modal (desktop) -->
     <Transition name="overlay">
@@ -207,37 +211,39 @@
                md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:w-full md:max-w-md md:max-h-[90vh]">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-lg font-semibold text-gray-900">Configuración</h2>
-          <XMarkIcon class="h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-600" @click="showSettings = false" />
+          <button class="p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 transition" @click="showSettings = false">
+            <XMarkIcon class="h-4 w-4" />
+          </button>
         </div>
 
-        <div class="flex flex-col gap-5">
+        <div class="flex flex-col gap-4">
           <!-- Nombre -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <label class="block text-xs font-medium text-gray-400 mb-1.5">Nombre</label>
             <input
               v-model="settingsTitle"
               type="text"
-              class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
+              class="block w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent text-sm text-gray-900"
             />
           </div>
 
           <!-- Día de facturación (solo tarjetas de crédito) -->
           <div v-if="goal.billingDay || goal.type === 'Tarjeta de crédito'">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Día de facturación</label>
+            <label class="block text-xs font-medium text-gray-400 mb-1.5">Día de facturación</label>
             <select
               v-model.number="settingsBillingDay"
-              class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm">
+              class="block w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent text-sm text-gray-900">
               <option v-for="day in 31" :key="day" :value="day">{{ day }}</option>
             </select>
           </div>
 
           <!-- Cupo de gasto máximo (solo tarjetas de crédito) -->
           <div v-if="goal.type === 'Tarjeta de crédito'">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Cupo de gasto máximo</label>
+            <label class="block text-xs font-medium text-gray-400 mb-1.5">Cupo de gasto máximo</label>
             <input
               v-model.number="settingsAvailableAmount"
               type="number"
-              class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
+              class="block w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent text-sm text-gray-900"
             />
           </div>
         </div>
@@ -245,7 +251,7 @@
         <button
           @click="saveSettings"
           :disabled="savingSettings"
-          class="mt-6 w-full px-4 py-3 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 transition">
+          class="mt-6 w-full px-4 py-3 text-sm font-medium text-white bg-gray-900 rounded-xl hover:bg-gray-800 disabled:opacity-50 transition active:scale-[0.98]">
           {{ savingSettings ? 'Guardando...' : 'Guardar cambios' }}
         </button>
       </div>
@@ -282,7 +288,8 @@ import {
   ArrowUpIcon,
   ArrowDownIcon,
   ChartPieIcon,
-  Cog6ToothIcon
+  Cog6ToothIcon,
+  ArrowLeftIcon
 } from '@heroicons/vue/24/outline';
 import * as OutlineIcons from '@heroicons/vue/24/outline';
 import { Capacitor } from '@capacitor/core';
@@ -457,12 +464,18 @@ const chartOptions = computed(() => {
 
   return {
     tooltip: { trigger: 'item' },
-    legend: { top: '0%', left: 'center' },
+    legend: {
+      bottom: '0%',
+      left: 'center',
+      orient: 'horizontal',
+      type: 'scroll',
+    },
     series: [
     {
       name: 'Categoría',
       type: 'pie',
-      radius: ['40%', '70%'],
+      center: ['50%', '42%'],
+      radius: ['35%', '60%'],
       avoidLabelOverlap: false,
       padAngle: 1,
       itemStyle: {

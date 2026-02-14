@@ -1,118 +1,125 @@
 <template>
   <div>
-    <div class="w-full flex justify-end">
+    <div class="w-full flex justify-end mb-4">
       <button
-        class="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-50 border border-transparent rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-        @click="() => { $router.push({ name: 'Dashboard' }); }">
-          Volver
+        class="p-2 bg-white/10 rounded-xl hover:bg-white/20 transition"
+        @click="$router.push({ name: 'Dashboard' })">
+        <ArrowLeftIcon class="h-4 w-4 text-white" aria-hidden="true" />
       </button>
     </div>
-    <h1 v-if="!type" class="mt-6 text-2xl font-semibold mb-4">Elige lo que quieres agregar a tu perfil</h1>
-    <h1 v-else class="mt-6 text-2xl font-semibold mb-4">Configura tu nueva {{ type?.toLowerCase() }}</h1>
+
+    <h1 v-if="!type" class="text-2xl font-bold text-gray-900 mb-1 mt-12">¿Qué quieres agregar?</h1>
+    <h1 v-else class="text-2xl font-bold text-gray-900 mb-1">Configura tu {{ type?.toLowerCase() }}</h1>
+    <p class="text-sm text-gray-400 mb-6">
+      {{ stage === 1 && !type ? 'Elige el tipo y un nombre' : stage === 1 ? 'Un paso más' : stage === 2 ? 'Moneda y montos' : 'Día de facturación' }}
+    </p>
+
     <!-- Etapa 1: Información básica -->
-    <div v-if="stage === 1" class="my-1 flex flex-col gap-4">
-      <div class="flex flex-col gap-2">
-        <div class="flex items-center">
-          <input
-            v-model="type"
-            type="radio"
-            id="bankAccount"
-            value="Cuenta bancaria"
-            class="h-4 w-4 text-gray-600 border-gray-300 focus:ring-gray-500"
-          />
-          <label for="bankAccount" class="ml-2 text-sm text-gray-700">Cuenta bancaria</label>
+    <div v-if="stage === 1" class="flex flex-col gap-5">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <p class="text-xs font-medium text-gray-400 mb-3">Tipo</p>
+        <div class="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            @click="type = 'Cuenta bancaria'"
+            :class="[
+              'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition',
+              type === 'Cuenta bancaria'
+                ? 'border-gray-900 bg-gray-50'
+                : 'border-gray-100 hover:border-gray-200'
+            ]">
+            <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-emerald-50">
+              <CurrencyDollarIcon class="h-5 w-5 text-emerald-600" aria-hidden="true" />
+            </div>
+            <span class="text-sm font-medium text-gray-900">Cuenta bancaria</span>
+          </button>
+          <button
+            type="button"
+            @click="type = 'Tarjeta de crédito'"
+            :class="[
+              'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition',
+              type === 'Tarjeta de crédito'
+                ? 'border-gray-900 bg-gray-50'
+                : 'border-gray-100 hover:border-gray-200'
+            ]">
+            <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-gray-900">
+              <CreditCardIcon class="h-5 w-5 text-white" aria-hidden="true" />
+            </div>
+            <span class="text-sm font-medium text-gray-900">Tarjeta de crédito</span>
+          </button>
         </div>
-        <div class="flex items-center">
-          <input
-            v-model="type"
-            type="radio"
-            id="creditCard"
-            value="Tarjeta de crédito"
-            class="h-4 w-4 text-gray-600 border-gray-300 focus:ring-gray-500"
-          />
-          <label for="creditCard" class="ml-2 text-sm text-gray-700">Tarjeta de crédito</label>
-        </div>
-        <label class="text-sm font-medium text-gray-700 mt-4">¿Cómo quieres que se llame?</label>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Nombre</label>
         <input
           v-model="title"
           type="text"
-          class="my-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
-          placeholder="por ej: Tarjeta BCi XXX" />
+          class="block w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent text-sm text-gray-900"
+          placeholder="Ej: Tarjeta BCi XXX"
+        />
       </div>
-      <div class="flex justify-end">
-        <button
-          @click="nextStage"
-          :disabled="!canProceedToNextStage"
-          class="mt-2 flex gap-2 items-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:bg-gray-400">
-          <ArrowRightIcon class="h-4 w-4" aria-hidden="true" />
-          Siguiente
-        </button>
-      </div>
+
+      <button
+        @click="nextStage"
+        :disabled="!canProceedToNextStage"
+        class="w-full py-3 text-sm font-medium text-white bg-gray-900 rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition active:scale-[0.98] flex items-center justify-center gap-2">
+        <span>Siguiente</span>
+        <ArrowRightIcon class="h-4 w-4" aria-hidden="true" />
+      </button>
     </div>
 
     <!-- Etapa 2: Configuración de moneda y montos -->
-    <div v-if="stage === 2" class="my-1 flex flex-col gap-1">
-      <!-- <select
-        v-model="mainCurrency"
-        class="block w-full pl-2 pr-3 py-2 my-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm">
-        <option v-for="option in options" :key="option.value" :value="option.value" :disabled="option.disabled">
-          {{ option.text }}
-        </option>
-      </select> -->
-      <div>
-        <p class="text-sm/6 text-gray-600">Elige la moneda principal de tu {{ type?.toLowerCase() }}:</p>
-      </div>
-      <div class="flex sm:flex-row flex-col flex-wrap gap-2">
-        <button
-          v-for="option in options"
-          :key="option.value"
-          :class="[
-            'flex items-center px-4 py-2 border rounded-lg transition',
-            mainCurrency === option.value
-              ? 'bg-gray-500 text-white'
-              : 'bg-gray-200 text-gray-700',
-            'hover:bg-gray-300 hover:text-white'
-          ]"
-          @click="selectCurrency(option.value)"
-          :disabled="option.disabled"
-        >
-          <country-flag
-            :country="option.countryCode"
-            rounded
-            class=""
-          />
-          {{ option.text }}
-        </button>
-      </div>
-      <div v-if="type === 'Tarjeta de crédito'">
-        <div>
-          <p  class="text-sm/6 text-gray-600 mt-4">Indica el monto de gasto máximo que quieres configurar para esta tarjeta:</p>
+    <div v-if="stage === 2" class="flex flex-col gap-5">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <p class="text-xs font-medium text-gray-400 mb-3">Moneda</p>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="option in options"
+            :key="option.value"
+            :class="[
+              'inline-flex items-center gap-2 px-4 py-2 rounded-xl border transition w-full sm:w-auto',
+              mainCurrency === option.value
+                ? 'border-gray-900 bg-gray-900 text-white'
+                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+            ]"
+            @click="selectCurrency(option.value)"
+            :disabled="option.disabled">
+            <country-flag :country="option.countryCode" rounded class="shrink-0" />
+            <span class="text-sm font-medium">{{ option.text }}</span>
+          </button>
         </div>
+      </div>
+
+      <div v-if="type === 'Tarjeta de crédito'" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Cupo máximo de gasto</label>
         <CurrencyInput
           v-model.lazy="availableAmount"
-          class="w-full my-1"
+          class="w-full"
           :placeholder="placeholderAmount"
           :currency="mainCurrency"
           :showSelect="false"
           :options="{ currency: mainCurrency, currencyDisplay: 'hidden' }"
         />
-        <p class="mb-3 text-sm/6 text-gray-400 italic">Puede ser el cupo de tu tarjeta de crédito o cualquier monto que estimes conveniente para mantener el control sobre tus finanzas</p>
+        <p class="mt-2 text-xs text-gray-400">Cupo de tu tarjeta o el monto que quieras controlar</p>
       </div>
-      <div v-else>
-        <div>
-          <p  class="text-sm/6 text-gray-600 mt-4">Indica el balance actual que tienes en tu cuenta:</p>
-        </div>
+
+      <div v-else class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Balance actual</label>
         <CurrencyInput
           v-model.lazy="currentBalanceOnAccount"
-          class="w-full my-1"
+          class="w-full"
           :placeholder="placeholderAmount"
           :currency="mainCurrency"
           :showSelect="false"
           :options="{ currency: mainCurrency, currencyDisplay: 'hidden' }"
         />
       </div>
-      <div class="flex justify-between">
-        <button @click="previousStage" class="flex gap-2 items-center mt-2 text-gray-600 hover:text-gray-800">
+
+      <div class="flex gap-3">
+        <button
+          @click="previousStage"
+          class="flex-1 py-3 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition flex items-center justify-center gap-2">
           <ArrowLeftIcon class="h-4 w-4" aria-hidden="true" />
           Atrás
         </button>
@@ -120,55 +127,52 @@
           v-if="type === 'Tarjeta de crédito'"
           @click="nextStage"
           :disabled="!canProceedToNextStage"
-          class="flex gap-2 items-center mt-2 px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:bg-gray-400">
+          class="flex-1 py-3 text-sm font-medium text-white bg-gray-900 rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition active:scale-[0.98] flex items-center justify-center gap-2">
+          <span>Siguiente</span>
           <ArrowRightIcon class="h-4 w-4" aria-hidden="true" />
-          Siguiente
         </button>
         <button
           v-else
           @click="handleSaveGoal"
           :disabled="!canSaveGoal"
-          class="mt-2 px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:bg-gray-400">
-          <svg v-if="isLoading" aria-hidden="true" role="status" class="inline w-4 h-4 me-3 text-white animate-spin" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="#E5E7EB"/>
-            <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentColor"/>
+          class="flex-1 py-3 text-sm font-medium text-white bg-gray-900 rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition active:scale-[0.98] flex items-center justify-center gap-2">
+          <svg v-if="isLoading" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          Crear {{ type?.toLowerCase() }}
+          <span v-else>Crear cuenta</span>
         </button>
       </div>
     </div>
 
     <!-- Etapa 3: Día de facturación (solo tarjetas de crédito) -->
-    <div v-if="stage === 3" class="my-1 flex flex-col gap-4">
-      <div class="flex flex-col w-full">
-        <label class="block text-sm font-medium leading-6 text-gray-900">
-          Día de facturación
-        </label>
-        <p class="text-sm text-gray-500 mb-2">
-          Indica el día del mes en que se factura tu tarjeta. Cada mes se renovará automáticamente.
-        </p>
+    <div v-if="stage === 3" class="flex flex-col gap-5">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Día de facturación</label>
+        <p class="text-sm text-gray-500 mb-3">El día del mes en que se factura. Se renovará automáticamente cada mes.</p>
         <select
           v-model.number="billingDay"
-          class="block w-full px-3 py-2 my-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm">
+          class="block w-full h-10 px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent text-sm text-gray-900">
           <option v-for="day in 31" :key="day" :value="day">{{ day }}</option>
         </select>
       </div>
 
-      <!-- Botones de navegación -->
-      <div class="flex justify-between">
-        <button @click="previousStage" class="flex gap-2 items-center mt-2 text-gray-600 hover:text-gray-800">
+      <div class="flex gap-3">
+        <button
+          @click="previousStage"
+          class="flex-1 py-3 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition flex items-center justify-center gap-2">
           <ArrowLeftIcon class="h-4 w-4" aria-hidden="true" />
           Atrás
         </button>
         <button
           @click="handleSaveGoal"
           :disabled="!canSaveGoal"
-          class="mt-2 px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:bg-gray-400">
-          <svg v-if="isLoading" aria-hidden="true" role="status" class="inline w-4 h-4 me-3 text-white animate-spin" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="#E5E7EB"/>
-            <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentColor"/>
+          class="flex-1 py-3 text-sm font-medium text-white bg-gray-900 rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition active:scale-[0.98] flex items-center justify-center gap-2">
+          <svg v-if="isLoading" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          Crear {{ type?.toLowerCase() }}
+          <span v-else>Crear tarjeta</span>
         </button>
       </div>
     </div>
@@ -183,7 +187,7 @@ import { getFirestore, collection, addDoc, Timestamp } from 'firebase/firestore'
 import { getAuth } from 'firebase/auth';
 import { fetchGoals } from '../utils/business/goals.js';
 import { useRouter } from 'vue-router';
-import { ArrowRightIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline';
+import { ArrowRightIcon, ArrowLeftIcon, CreditCardIcon, CurrencyDollarIcon } from '@heroicons/vue/24/outline';
 import CountryFlag from 'vue-country-flag-next';
 import { deriveKey, encrypt } from '@/services/encryption';
 import { calculateBillingPeriod } from '@/utils/billingPeriod';

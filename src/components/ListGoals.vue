@@ -3,91 +3,103 @@
     <LoadingSpinner />
   </div>
   <div v-else>
-    <div class="relative mb-16">
-      <div class="flex flex-col items-center text-center p-4 bg-white shadow-lg rounded-lg">
-        <span class="text-2xl font-bold flex align-center gap-x-2">
-          {{ currencySymbol(currentUserMainCurrency) }} {{ formatNumber(goalsTotalBalance, currentUserMainCurrency) }}
-          <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-700/10">
-            {{ currentUserMainCurrency }}
-          </span>
-        </span>
-        <span class="text-sm text-gray-700">Balance general</span>
+    <div class="relative mb-12">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div class="flex items-center gap-3">
+          <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-gray-900 shrink-0">
+            <CurrencyDollarIcon class="h-5 w-5 text-white" aria-hidden="true" />
+          </div>
+          <div class="flex-1">
+            <p class="text-xs text-gray-400 font-medium">Balance general</p>
+            <p class="text-2xl font-bold text-gray-900 mt-0.5">
+              {{ currencySymbol(currentUserMainCurrency) }} {{ formatNumber(goalsTotalBalance, currentUserMainCurrency) }}
+              <span class="text-xs font-medium text-gray-400 ml-1">{{ currentUserMainCurrency }}</span>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
-    <h1 class="text-2xl font-semibold	mb-4">Tus tarjetas</h1>
-    <div v-if="creditCardGoals.length > 0" class="max-w-4xl mx-auto">
-      <ul role="list" class="">
-        <li v-for="goal in creditCardGoals" :key="goal.id" class="mb-4">
-          <div class="flex items-center justify-between z-2 relative px-4 py-4 bg-white shadow-lg rounded-lg hover:bg-gray-50">
-            <router-link :to="`/goal/${goal.id}`" class="flex items-center flex-1">
-              <CreditCardIcon class="h-6 w-6" aria-hidden="true" />
-              <div class="ml-4">
-                <p class="text-sm font-medium text-gray-900">{{ goal.title }}</p>
-                <p
-                  v-if="goal.billingDay"
-                  class="text-sm text-gray-500">
-                  Se factura el día {{ goal.billingDay }}
+    <h1 class="text-2xl font-semibold mb-4">Tus tarjetas</h1>
+    <div v-if="creditCardGoals.length > 0" class="max-w-4xl mx-auto space-y-3">
+      <div
+        v-for="goal in creditCardGoals"
+        :key="goal.id"
+        class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 active:scale-[0.98] transition-transform cursor-pointer"
+        @click="$router.push(`/goal/${goal.id}`)">
+        <div class="flex items-start gap-3">
+          <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-gray-900 shrink-0">
+            <CreditCardIcon class="h-5 w-5 text-white" aria-hidden="true" />
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-semibold text-gray-900 truncate">{{ goal.title }}</p>
+              <button @click.stop="handleDeleteGoal(goal.id)" class="p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-300 hover:bg-red-50 transition ml-2 shrink-0">
+                <TrashIcon class="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            </div>
+            <p class="text-lg font-bold text-gray-900 mt-0.5">
+              {{ currencySymbol(goal.mainCurrency) }} {{ formatNumber(goal.currentBalanceOnAccount, goal.mainCurrency) }}
+              <span class="text-xs font-normal text-gray-400">/ {{ currencySymbol(goal.mainCurrency) }} {{ formatNumber(goal.availableAmount, goal.mainCurrency) }}</span>
+            </p>
+            <!-- Progress bar -->
+            <div class="mt-2 w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                class="h-full rounded-full transition-all duration-500"
+                :class="(goal.currentBalanceOnAccount / goal.availableAmount) > 0.85 ? 'bg-red-500' : (goal.currentBalanceOnAccount / goal.availableAmount) > 0.6 ? 'bg-amber-500' : 'bg-gray-900'"
+                :style="{ width: Math.min(goal.currentBalanceOnAccount / goal.availableAmount * 100, 100) + '%' }"
+              ></div>
+            </div>
+            <div class="flex items-center justify-between mt-2">
+              <p class="text-xs text-gray-400">
+                <template v-if="goal.billingDay">
+                  Factura día {{ goal.billingDay }}
                   <template v-if="goal.validUntil && calculateDaysRemaining(goal.validUntil.toDate()) > 0">
-                    ({{ calculateDaysRemaining(goal.validUntil.toDate()) }} {{ calculateDaysRemaining(goal.validUntil.toDate()) <= 1 ? 'día' : 'días' }})
+                    · {{ calculateDaysRemaining(goal.validUntil.toDate()) }}d restantes
                   </template>
-                </p>
-                <p
-                  v-else-if="goal.validUntil && calculateDaysRemaining(goal.validUntil?.toDate()) > 0"
-                  class="text-sm text-gray-500">
-                  Se factura en {{ calculateDaysRemaining(goal.validUntil.toDate()) }} {{ calculateDaysRemaining(goal.validUntil.toDate()) <= 1 ? 'día' : 'días' }}
-                </p>
-                <p v-else class="text-sm text-gray-500">
-                  Sin fecha de facturación
-                </p>
-              </div>
-              <div class="text-right ml-auto">
-                <p class="text-md text-gray-800 font-semibold flex items-center gap-x-2">
-                  <ArrowUpIcon class="h-4 w-4 min-h-4 min-w-4 text-red-600" />
-                  <span class="flex flex-wrap justify-end gap-x-2">
-                    {{currencySymbol(goal.mainCurrency)}} {{ formatNumber(goal.currentBalanceOnAccount, goal.mainCurrency ) }}
-                    <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-700/10">{{ goal.mainCurrency }}</span>
-                  </span>
-                </p>
-              </div>
-            </router-link>
-            <button @click="handleDeleteGoal(goal.id)" class="ml-4 text-slate-300 hover:text-red-600"><TrashIcon class="h-4 w-4" aria-hidden="true" /></button>
+                </template>
+                <template v-else-if="goal.validUntil && calculateDaysRemaining(goal.validUntil?.toDate()) > 0">
+                  Factura en {{ calculateDaysRemaining(goal.validUntil.toDate()) }} {{ calculateDaysRemaining(goal.validUntil.toDate()) <= 1 ? 'día' : 'días' }}
+                </template>
+                <template v-else>Sin fecha de facturación</template>
+              </p>
+              <p class="text-xs font-medium"
+                 :class="(goal.currentBalanceOnAccount / goal.availableAmount) > 0.85 ? 'text-red-500' : 'text-gray-400'">
+                {{ Math.round(goal.currentBalanceOnAccount / goal.availableAmount * 100) }}%
+              </p>
+            </div>
           </div>
-          <div class="w-full -mt-2 z-1 bg-gray-200 rounded-md h-4">
-            <div
-              class="bg-gray-800 h-4 rounded-md max-w-full"
-              :style="{ width: (goal.currentBalanceOnAccount / goal.availableAmount * 100) + '%' }"
-            ></div>
-          </div>
-        </li>
-      </ul>
+        </div>
+      </div>
     </div>
     <p v-else class="my-8 text-gray-400">Aún no tienes tarjeta agregada</p>
-    <div v-if="archivedGoals.length > 0" class="max-w-4xl mx-auto">
-      <p class="my-2 text-gray-400">Tu facturaciones pasadas:</p>
-      <ul role="list" class="">
-        <li v-for="goal in archivedGoals" :key="goal.id" class="mb-4">
-          <div class="flex items-center justify-between z-2 relative px-4 py-4 bg-white shadow-lg rounded-lg hover:bg-gray-50">
-            <router-link :to="`/goal/${goal.id}`" class="flex items-center flex-1">
-              <CreditCardIcon class="h-6 w-6" aria-hidden="true" />
-              <div class="ml-4">
-                <p class="text-sm font-medium text-gray-900">{{ goal.title }}</p>
-                <p v-if="goal.validUntil" class="text-xs text-gray-400">{{ goal.validUntil.toDate().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) }}</p>
-              </div>
-              <div class="text-right ml-auto">
-                <p class="text-md text-gray-800 font-semibold flex items-center gap-x-2">
-                  <ArrowUpIcon class="h-4 w-4 min-h-4 min-w-4 text-red-600" />
-                  <span class="flex flex-wrap justify-end gap-x-2">
-                    {{currencySymbol(goal.mainCurrency)}} {{ formatNumber(goal.currentBalanceOnAccount, goal.mainCurrency ) }}
-                    <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-700/10">{{ goal.mainCurrency }}</span>
-                  </span>
-                </p>
-              </div>
-            </router-link>
-            <button @click="handleDeleteGoal(goal.id)" class="ml-4 text-slate-300 hover:text-red-600"><TrashIcon class="h-4 w-4" aria-hidden="true" /></button>
+
+    <!-- Archived credit cards -->
+    <div v-if="archivedGoals.length > 0" class="max-w-4xl mx-auto mt-6">
+      <p class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Facturaciones anteriores</p>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-50">
+        <div
+          v-for="goal in archivedGoals"
+          :key="goal.id"
+          class="flex items-center gap-3 px-4 py-3 first:rounded-t-2xl last:rounded-b-2xl hover:bg-gray-50 transition cursor-pointer"
+          @click="$router.push(`/goal/${goal.id}`)">
+          <div class="flex items-center justify-center h-8 w-8 rounded-lg bg-gray-100 shrink-0">
+            <CreditCardIcon class="h-4 w-4 text-gray-400" aria-hidden="true" />
           </div>
-        </li>
-      </ul>
-      <div v-if="hasMoreArchivedGoals" class="flex items-center gap-3 mt-2">
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-700 truncate">{{ goal.title }}</p>
+            <p v-if="goal.validUntil" class="text-xs text-gray-400 capitalize">{{ goal.validUntil.toDate().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) }}</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="text-sm font-semibold text-gray-700">
+              {{ currencySymbol(goal.mainCurrency) }} {{ formatNumber(goal.currentBalanceOnAccount, goal.mainCurrency) }}
+            </p>
+          </div>
+          <button @click.stop="handleDeleteGoal(goal.id)" class="p-1 rounded-full border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-300 hover:bg-red-50 transition shrink-0">
+            <TrashIcon class="h-3 w-3" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+      <div v-if="hasMoreArchivedGoals" class="flex items-center gap-3 mt-3">
         <div class="flex-1 h-px bg-gray-200"></div>
         <button
           @click="loadArchivedGoals()"
@@ -98,38 +110,42 @@
         <div class="flex-1 h-px bg-gray-200"></div>
       </div>
     </div>
-    <h1 class="text-2xl font-semibold	mb-4 mt-16">Tus cuentas bancarias</h1>
-    <div v-if="bankAccountGoals.length > 0" class="max-w-4xl mx-auto">
-      <ul role="list" class="">
-        <li v-for="goal in bankAccountGoals" :key="goal.id" class="mb-4 flex items-center justify-between px-4 py-4 bg-white shadow-lg rounded-lg hover:bg-gray-50">
-          <router-link :to="`/goal/${goal.id}`" class="flex items-center flex-1">
-            <CurrencyDollarIcon class="h-6 w-6" aria-hidden="true" />
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-900">{{ goal.title }}</p>
-            </div>
-            <div class="text-right ml-auto">
-              <p class="text-md text-gray-800 font-semibold flex items-center gap-x-2">
-                <ArrowDownIcon class="h-4 w-4 min-h-4 min-w-4 text-green-600" />
-                <span class="flex flex-wrap justify-end gap-x-2">
-                  {{currencySymbol(goal.mainCurrency)}} {{ formatNumber(goal.currentBalanceOnAccount, goal.mainCurrency ) }}
-                  <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-700/10">{{ goal.mainCurrency }}</span>
-                </span>
-              </p>
-            </div>
-          </router-link>
-          <button @click="handleDeleteGoal(goal.id)" class="ml-4 text-slate-300 hover:text-red-600"><TrashIcon class="h-4 w-4" aria-hidden="true" /></button>
-        </li>
-      </ul>
+
+    <h1 class="text-2xl font-semibold mb-4 mt-16">Tus cuentas bancarias</h1>
+    <div v-if="bankAccountGoals.length > 0" class="max-w-4xl mx-auto space-y-3">
+      <div
+        v-for="goal in bankAccountGoals"
+        :key="goal.id"
+        class="flex items-center gap-3 bg-white rounded-2xl shadow-sm border border-gray-100 p-4 active:scale-[0.98] transition-transform cursor-pointer"
+        @click="$router.push(`/goal/${goal.id}`)">
+        <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-emerald-50 shrink-0">
+          <CurrencyDollarIcon class="h-5 w-5 text-emerald-600" aria-hidden="true" />
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-gray-900 truncate">{{ goal.title }}</p>
+          <p class="text-xs text-gray-400 mt-0.5">Cuenta bancaria</p>
+        </div>
+        <div class="text-right shrink-0">
+          <p class="text-lg font-bold text-gray-900">
+            {{ currencySymbol(goal.mainCurrency) }} {{ formatNumber(goal.currentBalanceOnAccount, goal.mainCurrency) }}
+          </p>
+          <p class="text-xs text-gray-400">{{ goal.mainCurrency }}</p>
+        </div>
+        <button @click.stop="handleDeleteGoal(goal.id)" class="p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-300 hover:bg-red-50 transition shrink-0">
+          <TrashIcon class="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
+      </div>
     </div>
     <p v-else class="my-8 text-gray-400">Aún no tienes cuenta agregada</p>
-    <div class="bg-gray-900 hover:bg-gray-800 text-white flex items-center justify-between px-4 py-4 rounded-lg">
-      <router-link :to="`/create-goal/`" class="flex items-center flex-1">
-        <PlusCircleIcon class="h-6 w-6" aria-hidden="true" />
-        <div class="ml-4">
-          <p class="text-sm font-medium">Agregar nueva tarjeta o cuenta bancaria</p>
-        </div>
-      </router-link>
-    </div>
+
+    <router-link
+      to="/create-goal"
+      class="mt-6 flex items-center gap-3 bg-gray-900 hover:bg-gray-800 text-white p-4 rounded-2xl transition active:scale-[0.98]">
+      <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-white/10 shrink-0">
+        <PlusCircleIcon class="h-5 w-5" aria-hidden="true" />
+      </div>
+      <p class="text-sm font-medium">Agregar nueva tarjeta o cuenta</p>
+    </router-link>
 
     <TransitionRoot :show="showSelectMainCurrencyModal" as="modal">
       <Dialog @close="showSelectMainCurrencyModal = false">
@@ -208,7 +224,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { Dialog, DialogOverlay, DialogPanel, DialogTitle, TransitionRoot } from '@headlessui/vue'
 import CountryFlag from 'vue-country-flag-next';
-import { ArrowUpIcon,ArrowDownIcon, CurrencyDollarIcon, CreditCardIcon, TrashIcon, PlusCircleIcon } from '@heroicons/vue/24/outline';
+import { CurrencyDollarIcon, CreditCardIcon, TrashIcon, PlusCircleIcon } from '@heroicons/vue/24/outline';
 import { getFirestore, Timestamp, collection, getDocs, getDoc, updateDoc, query, where, deleteDoc, doc, writeBatch } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import {fetchGoals, fetchArchivedGoals} from '@/utils/business/goals.js'
