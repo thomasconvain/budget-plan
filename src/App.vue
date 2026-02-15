@@ -1,5 +1,12 @@
 <template>
 
+  <!-- Splash screen -->
+  <Transition name="splash">
+    <div v-if="loading" class="fixed inset-0 bg-gray-950 flex items-center justify-center z-50">
+      <img src="@/assets/img/logo.svg" alt="BudgetPlan" class="w-40 logo-pulse" />
+    </div>
+  </Transition>
+
   <div class="flex flex-col bg-gray-50 min-h-screen">
     <div class="z-50">
       <NavBar class="absolute w-full"/>
@@ -7,17 +14,14 @@
     <div ref="bgContainer" class="pt-24 relative">
       <div class="absolute inset-x-0 top-0 bg-gray-950 rounded-b-3xl"
            :style="{
-             height: $route.path === '/dashboard' ? '145px' : 
+             height: $route.path === '/dashboard' ? '145px' :
                     $route.path.startsWith('/create-goal') ? '140px' :
-                    $route.path.startsWith('/goal') ? `${backgroundHeight}px` :
+                    ($route.path.startsWith('/goal') || $route.path === '/contacts') ? `${backgroundHeight}px` :
                     '385px'
            }">
       </div>
       <div class="px-10 pb-5 w-full md:max-w-4xl m-auto relative">
-        <div v-if="loading">
-          <LoadingSpinner />
-        </div>
-        <div v-else class="flex-grow">
+        <div class="flex-grow">
           <router-view class="pb-16" @last-card-position="updateBackgroundHeight" />
         </div>
       </div>
@@ -30,7 +34,6 @@
 <script setup>
 import NavBar from './components/NavBar.vue'
 import FooterSection from './components/FooterSection.vue'
-import LoadingSpinner from './components/LoadingSpinner.vue'
 import { Capacitor } from '@capacitor/core';
 import { useStore } from 'vuex';
 import { computed, ref, watch } from 'vue';
@@ -51,7 +54,7 @@ watch(() => route.path, () => {
 });
 
 const updateBackgroundHeight = (cardBottom) => {
-  if (route.path.startsWith('/goal') && bgContainer.value) {
+  if ((route.path.startsWith('/goal') || route.path === '/contacts') && bgContainer.value) {
     const containerTop = bgContainer.value.getBoundingClientRect().top;
     backgroundHeight.value = cardBottom - containerTop;
   }
@@ -65,5 +68,22 @@ const updateBackgroundHeight = (cardBottom) => {
   -moz-osx-font-smoothing: grayscale;
 
   color: #2c3e50;
+}
+
+.logo-pulse {
+  filter: invert(1);
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.splash-leave-active {
+  transition: opacity 0.4s ease;
+}
+.splash-leave-to {
+  opacity: 0;
 }
 </style>

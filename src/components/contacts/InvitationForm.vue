@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
     <h3 class="text-sm font-semibold text-gray-900 mb-3">Invitar contacto</h3>
-    <div class="flex gap-2">
+    <div class="flex gap-2 flex-col sm:flex-row">
       <input
         v-model="email"
         type="email"

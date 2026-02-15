@@ -2,7 +2,7 @@
   <div v-if="received.length || sent.length" class="space-y-4">
     <!-- Invitaciones recibidas -->
     <div v-if="received.length">
-      <h3 class="text-sm font-semibold text-gray-900 mb-2">Invitaciones recibidas</h3>
+      <h3 class="text-sm font-semibold text-white mb-2">Invitaciones recibidas</h3>
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-50">
         <div
           v-for="inv in received"
@@ -35,7 +35,7 @@
 
     <!-- Invitaciones enviadas -->
     <div v-if="sent.length">
-      <h3 class="text-sm font-semibold text-gray-900 mb-2">Invitaciones enviadas</h3>
+      <h3 class="text-sm font-semibold text-white mb-2">Invitaciones enviadas</h3>
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-50">
         <div
           v-for="inv in sent"

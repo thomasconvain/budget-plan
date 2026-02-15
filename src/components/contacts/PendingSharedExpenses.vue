@@ -1,6 +1,6 @@
 <template>
   <div v-if="expenses.length">
-    <h3 class="text-sm font-semibold text-gray-900 mb-2">
+    <h3 class="text-sm font-semibold text-white mb-2">
       Gastos compartidos pendientes
       <span class="ml-1 inline-flex items-center justify-center h-5 w-5 bg-red-500 rounded-full text-[10px] font-bold text-white">
         {{ expenses.length }}
