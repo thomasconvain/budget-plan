@@ -5,6 +5,7 @@ import { useStore } from 'vuex';
 import GoalDetails from '../views/GoalDetails.vue';
 import Dashboard from '@/views/Dashboard.vue';
 import CreateGoal from '@/views/CreateGoal.vue';
+import Contacts from '@/views/Contacts.vue';
 
 const routes = [
   {
@@ -40,6 +41,14 @@ const routes = [
     props: true,
     meta: {
       requiresAuth: true // Esta ruta requiere autenticación
+    }
+  },
+  {
+    path: '/contacts',
+    name: 'Contacts',
+    component: Contacts,
+    meta: {
+      requiresAuth: true
     }
   },
 ];

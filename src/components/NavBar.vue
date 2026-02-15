@@ -22,11 +22,16 @@
           </div>
         </div>
         <div v-if="user" class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-          <!-- <button type="button" class="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
+          <button type="button" @click="router.push('/contacts')" class="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
             <span class="absolute -inset-1.5" />
-            <span class="sr-only">View notifications</span>
+            <span class="sr-only">Ver contactos</span>
             <BellIcon class="h-6 w-6" aria-hidden="true" />
-          </button> -->
+            <span
+              v-if="totalPendingCount > 0"
+              class="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center">
+              {{ totalPendingCount > 9 ? '9+' : totalPendingCount }}
+            </span>
+          </button>
 
           <!-- Profile dropdown -->
           <Menu as="div" class="relative ml-3">
@@ -70,17 +75,17 @@
 
 <script setup>
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
-import { Bars3Icon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { Bars3Icon, XMarkIcon, BellIcon } from '@heroicons/vue/24/outline'
 import { useStore } from 'vuex';
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-
 const store = useStore();
 
 // Acceder al getter 'user' del store
 const user = computed(() => store.getters.user);
 
 const router = useRouter();
+const totalPendingCount = computed(() => store.getters.totalPendingCount || 0);
 
 
 // Acceder solo a la acción de logout

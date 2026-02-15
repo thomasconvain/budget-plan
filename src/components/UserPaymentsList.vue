@@ -86,7 +86,7 @@ const auth = getAuth();
 const db = getFirestore();
 
 // eslint-disable-next-line no-undef
-const emit = defineEmits(['paymentSaved']);
+const emit = defineEmits(['paymentSaved', 'shareAvailable']);
 
 const fetchGoals = async () => {
   const user = auth.currentUser;
@@ -137,27 +137,43 @@ const handleSavePayment = async () => {
   const finalAmount = isAbono ? -Math.abs(parsedAmount) : parsedAmount;
   const encryptedAmount = encrypt(finalAmount.toString(), key);
 
+  // Guardar la info del pago para compartir antes de limpiar el form
+  const paymentCategory = category.value.name;
+  const paymentIcon = category.value.icon;
+  const paymentCurrency = currency.value;
+
   // Emitir el evento inmediatamente para actualizar la UI con toda la información necesaria
-  emit('paymentSaved', finalAmount, currency.value, {
-    name: category.value.name,
-    icon: category.value.icon
+  emit('paymentSaved', finalAmount, paymentCurrency, {
+    name: paymentCategory,
+    icon: paymentIcon
   });
   amount.value = '';
 
   // Realizar la operación de base de datos en segundo plano
   try {
-    await addDoc(collection(db, 'payments'), {
+    const paymentDoc = await addDoc(collection(db, 'payments'), {
       userId: user.uid,
       amount: encryptedAmount,
       category: encryptedCategory,
       categoryIcon: encryptedIcon,
       goalId: props.selectedGoalId,
       date: currentDate,
-      currency: currency.value,
+      currency: paymentCurrency,
     });
+
+    // Emitir datos para ofrecer compartir (solo si no es un abono)
+    if (!isAbono) {
+      emit('shareAvailable', {
+        paymentId: paymentDoc.id,
+        goalId: props.selectedGoalId,
+        amount: finalAmount,
+        currency: paymentCurrency,
+        category: paymentCategory,
+        categoryIcon: paymentIcon,
+      });
+    }
   } catch (error) {
     console.error('Error al guardar el pago:', error);
-    // Aquí podrías implementar una lógica para revertir los cambios en la UI si es necesario
   }
 };
 

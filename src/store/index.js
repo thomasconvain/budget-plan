@@ -1,6 +1,13 @@
 import { createStore } from 'vuex';
 import { createUserWithEmailAndPassword, signInWithPopup, signInWithCredential, GoogleAuthProvider, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
+
+function userDocPayload(user) {
+  const payload = { userId: user.uid };
+  if (user.email) payload.email = user.email;
+  if (user.displayName) payload.name = user.displayName;
+  return payload;
+}
 import { auth, db } from '@/firebase';
 import { Capacitor } from '@capacitor/core';
 import { GoogleAuth } from '@southdevs/capacitor-google-auth';
@@ -12,6 +19,8 @@ const store = createStore({
     loading: true,
     revenueCatReady: false,
     premium: false,
+    pendingSharedExpensesCount: 0,
+    pendingInvitationsCount: 0,
   },
   mutations: {
     setUser(state, user) {
@@ -28,6 +37,12 @@ const store = createStore({
     },
     setRevenueCatReady(state, value) {
       state.revenueCatReady = value
+    },
+    setPendingSharedExpensesCount(state, count) {
+      state.pendingSharedExpensesCount = count;
+    },
+    setPendingInvitationsCount(state, count) {
+      state.pendingInvitationsCount = count;
     },
   },
   actions: {
@@ -79,11 +94,11 @@ const store = createStore({
         // Recuperar la dirección del usuario desde Firestore
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
-  
+        const payload = userDocPayload(user);
         if (userDoc.exists()) {
-          // DO NOTHING
+          await setDoc(userDocRef, payload, { merge: true });
         } else {
-          await setDoc(userDocRef, { userId: user.uid });
+          await setDoc(userDocRef, payload);
         }
         router.push('/dashboard');
       } catch (error) {
@@ -121,12 +136,8 @@ const store = createStore({
 
             const userDocRef = doc(db, 'users', user.uid);
             const userDoc = await getDoc(userDocRef);
-
-            if (userDoc.exists()) {
-              //DO NOTHING
-            } else {
-              await setDoc(userDocRef, { userId: user.uid });
-            }
+            const payload = userDocPayload(user);
+            await setDoc(userDocRef, payload, { merge: true });
           } else {
             commit('clearUser');
           }
@@ -139,6 +150,7 @@ const store = createStore({
   getters: {
     user: (state) => state.user,
     loading: (state) => state.loading,
+    totalPendingCount: (state) => state.pendingSharedExpensesCount + state.pendingInvitationsCount,
   },
 });
 

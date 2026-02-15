@@ -6,6 +6,178 @@ const apiKey = functions.config().exchangerate.api_key;
 const admin = require("firebase-admin");
 admin.initializeApp();
 
+// ─── Callable: buscar usuario por email ───────────────────────────
+exports.findUserByEmail = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+        "unauthenticated",
+        "Debes iniciar sesión",
+    );
+  }
+
+  const email = (data.email || "").trim().toLowerCase();
+  if (!email) {
+    throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Email es requerido",
+    );
+  }
+
+  const callerUid = context.auth.uid;
+
+  const snapshot = await admin.firestore()
+      .collection("users")
+      .where("email", "==", email)
+      .limit(1)
+      .get();
+
+  if (snapshot.empty) {
+    throw new functions.https.HttpsError(
+        "not-found",
+        "No se encontró un usuario con ese email",
+    );
+  }
+
+  const userDoc = snapshot.docs[0];
+  const userData = userDoc.data();
+
+  if (userDoc.id === callerUid) {
+    throw new functions.https.HttpsError(
+        "invalid-argument",
+        "No puedes invitarte a ti mismo",
+    );
+  }
+
+  return {
+    uid: userDoc.id,
+    name: userData.name || userData.email,
+    email: userData.email,
+  };
+});
+
+// ─── Migración: rellenar campo email en colección users desde Auth ─
+// Ejecutar una vez desde la consola o con un cliente autenticado.
+// Lista todos los usuarios de Auth y actualiza Firestore users/{uid}
+// con email (y name si falta) cuando el documento no tiene email.
+exports.migrateUsersAddEmail = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+        "unauthenticated",
+        "Debes iniciar sesión para ejecutar la migración",
+    );
+  }
+
+  const firestore = admin.firestore();
+  let totalProcessed = 0;
+  let totalUpdated = 0;
+  let nextPageToken;
+
+  do {
+    const listResult = nextPageToken ?
+      await admin.auth().listUsers(1000, nextPageToken) :
+      await admin.auth().listUsers(1000);
+    nextPageToken = listResult.pageToken;
+
+    for (const authUser of listResult.users) {
+      totalProcessed++;
+      const uid = authUser.uid;
+      const email = (authUser.email || "").trim().toLowerCase();
+      const name = authUser.displayName || null;
+      if (!email) continue; // Auth sin email (anon, etc.) → no podemos rellenar
+
+      const userRef = firestore.doc(`users/${uid}`);
+      const snap = await userRef.get();
+      if (!snap.exists) continue;
+
+      const current = snap.data();
+      if (current.email) continue; // ya tiene email
+
+      await userRef.set({
+        email,
+        ...(name && !current.name ? {name} : {}),
+      }, {merge: true});
+      totalUpdated++;
+    }
+  } while (nextPageToken);
+
+  const msg =
+    `Migración: ${totalUpdated} de ${totalProcessed} usuarios actualizados.`;
+  return {ok: true, totalProcessed, totalUpdated, message: msg};
+});
+
+// ─── Trigger: push notification al crear gasto compartido ─────────
+exports.onSharedExpenseCreated = functions.firestore
+    .document("sharedExpenses/{expenseId}")
+    .onCreate(async (snap, context) => {
+      const data = snap.data();
+      const recipientId = data.recipientUserId;
+      if (!recipientId) return null;
+
+      const userDoc = await admin.firestore()
+          .doc(`users/${recipientId}`).get();
+      if (!userDoc.exists) return null;
+
+      const fcmToken = userDoc.data().fcmToken;
+      if (!fcmToken) return null;
+
+      const senderName = data.createdByName || "Alguien";
+      const message = {
+        token: fcmToken,
+        notification: {
+          title: "Nuevo gasto compartido",
+          body: `${senderName} compartió un gasto de ` +
+                `${data.currency} ${data.amount} contigo`,
+        },
+        data: {
+          type: "shared_expense",
+          expenseId: context.params.expenseId,
+        },
+      };
+
+      try {
+        await admin.messaging().send(message);
+      } catch (err) {
+        console.error("Error sending push:", err);
+        if (err.code === "messaging/registration-token-not-registered") {
+          await admin.firestore()
+              .doc(`users/${recipientId}`)
+              .update({fcmToken: admin.firestore.FieldValue.delete()});
+        }
+      }
+      return null;
+    });
+
+// ─── Trigger: push notification al crear invitación ───────────────
+exports.onInvitationCreated = functions.firestore
+    .document("invitations/{invitationId}")
+    .onCreate(async (snap) => {
+      const data = snap.data();
+      const recipientId = data.toUserId;
+
+      const userDoc = await admin.firestore()
+          .doc(`users/${recipientId}`).get();
+      if (!userDoc.exists || !userDoc.data().fcmToken) return null;
+
+      const message = {
+        token: userDoc.data().fcmToken,
+        notification: {
+          title: "Nueva invitación de contacto",
+          body: `${data.fromName || data.fromEmail} ` +
+                `quiere conectar contigo`,
+        },
+        data: {
+          type: "invitation",
+        },
+      };
+
+      try {
+        await admin.messaging().send(message);
+      } catch (err) {
+        console.error("Error sending invitation push:", err);
+      }
+      return null;
+    });
+
 const billingModule = require("./billingPeriod");
 
 // Función para obtener la tasa de conversión

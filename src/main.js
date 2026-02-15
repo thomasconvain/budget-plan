@@ -4,11 +4,12 @@ import App from './App.vue'
 import './assets/css/tailwind.css'
 import store from './store'
 import router from './router'
-import { auth } from './firebase'
+import { auth, messaging } from './firebase'
 import { onAuthStateChanged } from 'firebase/auth'
-import { getFirestore, doc, onSnapshot } from 'firebase/firestore'
+import { getFirestore, doc, onSnapshot, collection, query, where } from 'firebase/firestore'
 import { Capacitor } from '@capacitor/core'
 import { Purchases, LOG_LEVEL } from '@revenuecat/purchases-capacitor'
+import { requestNotificationPermission, setupOnMessageListener } from './services/notifications'
 
 const REVENUECAT_KEY = 'goog_cDBJOWVyBuCtmZPVGnNzywMQPUl'
 const db = getFirestore()
@@ -45,13 +46,39 @@ router.isReady().then(() => {
       const userDoc = doc(db, 'users', user.uid)
       onSnapshot(userDoc, snap => {
         const data = snap.data() || {}
-        // Guarda en Vuex (asegúrate de tener esta mutación)
         store.commit('setPremium', !!data.premium)
+      })
+
+      // 4) Listeners en tiempo real para badges de notificaciones
+      const pendingExpensesQuery = query(
+        collection(db, 'sharedExpenses'),
+        where('recipientUserId', '==', user.uid),
+        where('status', '==', 'pending')
+      )
+      onSnapshot(pendingExpensesQuery, snap => {
+        store.commit('setPendingSharedExpensesCount', snap.size)
+      })
+
+      const pendingInvitationsQuery = query(
+        collection(db, 'invitations'),
+        where('toUserId', '==', user.uid),
+        where('status', '==', 'pending')
+      )
+      onSnapshot(pendingInvitationsQuery, snap => {
+        store.commit('setPendingInvitationsCount', snap.size)
+      })
+
+      // 5) Inicializar FCM para push notifications
+      requestNotificationPermission(messaging)
+      setupOnMessageListener(messaging, (payload) => {
+        console.log('Notificación recibida en foreground:', payload)
       })
     } else {
       // Usuario deslogueado: limpia store
       store.commit('clearUser')
       store.commit('setPremium', false)
+      store.commit('setPendingSharedExpensesCount', 0)
+      store.commit('setPendingInvitationsCount', 0)
       // Opcional: limpia RevenueCat
       await Purchases.reset()
     }

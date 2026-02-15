@@ -4,8 +4,9 @@ import { initializeApp } from "firebase/app";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getFunctions } from "firebase/functions";
+import { getMessaging, isSupported } from "firebase/messaging";
 // import { getAnalytics } from "firebase/analytics";
-// Otros servicios de Firebase que puedas necesitar
 
 const firebaseConfig = {
   apiKey: "AIzaSyD4kgFudYyiC-Nks4-KeGIb96NGLlFpBrU",
@@ -33,5 +34,14 @@ const appCheck = initializeAppCheck(app, {
 // Inicializa los servicios que necesites
 const auth = getAuth(app);
 const db = getFirestore(app);
-// Exporta los servicios para que puedan ser utilizados en otros archivos
-export { auth, db };
+const functions = getFunctions(app);
+
+// Messaging solo se soporta en navegadores con service workers
+let messaging = null;
+isSupported().then((supported) => {
+  if (supported) {
+    messaging = getMessaging(app);
+  }
+});
+
+export { auth, db, functions, messaging };

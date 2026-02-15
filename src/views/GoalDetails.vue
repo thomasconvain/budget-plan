@@ -132,6 +132,7 @@
       :selectedGoalId="route.params.goalId"
       :goalMainCurrency="goal.mainCurrency"
       @paymentSaved="onPaymentSaved"
+      @shareAvailable="onShareAvailable"
     />
 
     <div
@@ -166,7 +167,7 @@
               />
             </div>
             <!-- Info -->
-            <div class="flex-1 min-w-0">
+              <div class="flex-1 min-w-0">
               <div class="flex items-center gap-1.5">
                 <component
                   :is="getIconComponent(payment.categoryIcon)"
@@ -174,6 +175,13 @@
                 />
                 <p class="text-sm font-medium text-gray-700 truncate">{{ payment.category }}</p>
               </div>
+              <p v-if="payment.sharedInfo" class="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                <UserGroupIcon class="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                <span>{{ payment.sharedInfo.recipientName }}</span>
+                <span v-if="payment.sharedInfo.originalAmount" class="text-gray-400">
+                  · Total original: {{ currencySymbol(payment.sharedInfo.currency) }} {{ formatNumber(payment.sharedInfo.originalAmount, payment.sharedInfo.currency) }}
+                </span>
+              </p>
               <p v-if="payment.currency !== goal.mainCurrency" class="text-xs text-gray-400 mt-0.5">
                 {{ currencySymbol(goal.mainCurrency) }} {{ formatNumber(payment.convertedAmount, goal.mainCurrency) }}
               </p>
@@ -256,6 +264,14 @@
         </button>
       </div>
     </Transition>
+
+    <!-- Share expense panel -->
+    <ShareExpensePanel
+      :visible="showSharePanel"
+      :payment="sharePaymentData"
+      @close="showSharePanel = false"
+      @shared="onSharedExpense"
+    />
   </div>
 </template>
 
@@ -266,10 +282,12 @@ import { Timestamp, getFirestore, doc, getDoc, updateDoc, collection, query, whe
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import UserPaymentsList from '../components/UserPaymentsList.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
+import ShareExpensePanel from '../components/ShareExpensePanel.vue';
 import { formatDate, formatDateToLargeString } from '../utils/dateFormatter';
 import { formatNumber } from '../utils/currencyFormatters';
 import { convertToMainCurrency } from '../utils/currencyConverter';
 import { calculateBillingPeriod } from '../utils/billingPeriod';
+import { getSharedRecipientNamesByPaymentIds } from '../utils/business/sharedExpenses';
 import {
   TitleComponent,
   TooltipComponent,
@@ -289,7 +307,8 @@ import {
   ArrowDownIcon,
   ChartPieIcon,
   Cog6ToothIcon,
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  UserGroupIcon,
 } from '@heroicons/vue/24/outline';
 import * as OutlineIcons from '@heroicons/vue/24/outline';
 import { Capacitor } from '@capacitor/core';
@@ -323,6 +342,8 @@ const showCharts = ref(false);
 const balanceReadyToEdit = ref(false);
 const balanceToUpdate = ref(0);
 const lastCardRef = ref(null);
+const showSharePanel = ref(false);
+const sharePaymentData = ref({ amount: 0, currency: 'CLP', category: '', categoryIcon: '', paymentId: '', goalId: '' });
 const emit = defineEmits(['last-card-position']);
 
 const goBack = () => router.push({ name: 'Dashboard' });
@@ -401,7 +422,7 @@ const fetchPaymentsForGoal = async (goalId) => {
   const raw = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
   // 4) Descifra y convierte
-  payments.value = await Promise.all(
+  const list = await Promise.all(
     raw.map(async p => {
       let category, categoryIcon, decryptedAmount, amount;
 
@@ -432,6 +453,13 @@ const fetchPaymentsForGoal = async (goalId) => {
       };
     })
   );
+
+  const paymentIds = list.map(p => p.id);
+  const sharedMap = await getSharedRecipientNamesByPaymentIds(paymentIds);
+  payments.value = list.map(p => ({
+    ...p,
+    sharedInfo: sharedMap[p.id] || null
+  }));
 };
 
 const currencySymbol = (currency) => {
@@ -617,6 +645,18 @@ const onPaymentSaved = async (amount, currency, categoryInfo) => {
     console.error('Error al actualizar el balance:', error);
     // Aquí podrías implementar una lógica para revertir los cambios en la UI si es necesario
   }
+};
+
+const onShareAvailable = (paymentData) => {
+  sharePaymentData.value = paymentData;
+  showSharePanel.value = true;
+};
+
+const onSharedExpense = async () => {
+  showSharePanel.value = false;
+  const id = route.params.goalId;
+  await fetchGoalDetails(id);
+  await fetchPaymentsForGoal(id);
 };
 
 const deletePayment = async p => {

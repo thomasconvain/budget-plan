@@ -2,8 +2,57 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+
+    // Usuarios: el dueño puede leer/escribir su propio doc
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Goals: solo el dueño
+    match /goals/{goalId} {
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Payments: solo el dueño
+    match /payments/{paymentId} {
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Categories: cualquier usuario autenticado puede leer
+    match /categories/{catId} {
+      allow read: if request.auth != null;
+    }
+
+    // Conversion rates: cualquier usuario autenticado puede leer
+    match /conversion-rates/{rateId} {
+      allow read: if request.auth != null;
+    }
+
+    // Invitaciones: ambas partes pueden leer; remitente crea; destinatario actualiza status
+    match /invitations/{invitationId} {
+      allow read: if request.auth != null
+        && (resource.data.fromUserId == request.auth.uid
+            || resource.data.toUserId == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.fromUserId == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.toUserId == request.auth.uid;
+      allow delete: if request.auth != null
+        && resource.data.fromUserId == request.auth.uid
+        && resource.data.status == 'pending';
+    }
+
+    // Gastos compartidos: ambas partes pueden leer; creador crea; destinatario actualiza (asignar)
+    match /sharedExpenses/{expenseId} {
+      allow read: if request.auth != null
+        && (resource.data.createdByUserId == request.auth.uid
+            || resource.data.recipientUserId == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.createdByUserId == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.recipientUserId == request.auth.uid;
     }
   }
 }
