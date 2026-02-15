@@ -36,12 +36,9 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const functions = getFunctions(app);
 
-// Messaging solo se soporta en navegadores con service workers
-let messaging = null;
-isSupported().then((supported) => {
-  if (supported) {
-    messaging = getMessaging(app);
-  }
+// Messaging: promesa que resuelve a la instancia o null según soporte
+const messagingPromise = isSupported().then((supported) => {
+  return supported ? getMessaging(app) : null;
 });
 
-export { auth, db, functions, messaging };
+export { auth, db, functions, messagingPromise };

@@ -1,16 +1,71 @@
 import { getToken, onMessage } from 'firebase/messaging';
 import { getFirestore, doc, updateDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
+import { FirebaseMessaging } from '@capacitor-firebase/messaging';
 
 const db = getFirestore();
 const auth = getAuth();
 
 /**
- * Solicita permisos de notificación y obtiene el token FCM.
- * Guarda el token en el documento del usuario en Firestore.
- * @param {Object} messaging - Instancia de Firebase Messaging (puede ser null si no soportado)
+ * Guarda el token FCM en el documento del usuario.
  */
-export async function requestNotificationPermission(messaging) {
+async function saveFcmToken(token) {
+  const user = auth.currentUser;
+  if (!user || !token) return;
+
+  await updateDoc(doc(db, 'users', user.uid), {
+    fcmToken: token,
+  });
+}
+
+/**
+ * Inicializa notificaciones push en plataforma nativa (Android/iOS).
+ * Solicita permisos, obtiene token FCM y lo guarda en Firestore.
+ */
+async function initNativePush(onNotification) {
+  try {
+    const permResult = await FirebaseMessaging.requestPermissions();
+    if (permResult.receive !== 'granted') {
+      console.warn('Permiso de notificaciones denegado');
+      return null;
+    }
+
+    const { token } = await FirebaseMessaging.getToken();
+    if (token) {
+      await saveFcmToken(token);
+    }
+
+    // Listener cuando el token se renueva
+    FirebaseMessaging.addListener('tokenReceived', async ({ token: newToken }) => {
+      await saveFcmToken(newToken);
+    });
+
+    // Listener para notificaciones recibidas con la app en foreground
+    FirebaseMessaging.addListener('notificationReceived', (notification) => {
+      if (onNotification) {
+        onNotification(notification);
+      }
+    });
+
+    // Listener cuando el usuario toca una notificación
+    FirebaseMessaging.addListener('notificationActionPerformed', (action) => {
+      console.log('Notificación tocada:', action);
+    });
+
+    return token;
+  } catch (e) {
+    console.error('Error inicializando push nativo:', e);
+    return null;
+  }
+}
+
+/**
+ * Inicializa notificaciones push en web.
+ * Solicita permisos, obtiene token FCM via VAPID y lo guarda en Firestore.
+ * @param {Object} messaging - Instancia de Firebase Messaging web
+ */
+async function initWebPush(messaging, onNotification) {
   if (!messaging) return null;
 
   try {
@@ -25,36 +80,28 @@ export async function requestNotificationPermission(messaging) {
       await saveFcmToken(token);
     }
 
+    // Listener para mensajes en foreground
+    onMessage(messaging, (payload) => {
+      if (onNotification) {
+        onNotification(payload);
+      }
+    });
+
     return token;
   } catch (e) {
-    console.error('Error obteniendo token FCM:', e);
+    console.error('Error inicializando push web:', e);
     return null;
   }
 }
 
 /**
- * Guarda el token FCM en el documento del usuario.
+ * Punto de entrada principal: detecta la plataforma y configura push.
+ * @param {Object|null} webMessaging - Instancia de Firebase Messaging web (null en nativo)
+ * @param {Function} onNotification - Callback cuando llega una notificación en foreground
  */
-async function saveFcmToken(token) {
-  const user = auth.currentUser;
-  if (!user) return;
-
-  await updateDoc(doc(db, 'users', user.uid), {
-    fcmToken: token,
-  });
-}
-
-/**
- * Configura el listener para mensajes en foreground.
- * @param {Object} messaging - Instancia de Firebase Messaging
- * @param {Function} onNotification - Callback cuando llega una notificación
- */
-export function setupOnMessageListener(messaging, onNotification) {
-  if (!messaging) return;
-
-  onMessage(messaging, (payload) => {
-    if (onNotification) {
-      onNotification(payload);
-    }
-  });
+export async function initPushNotifications(webMessaging, onNotification) {
+  if (Capacitor.isNativePlatform()) {
+    return initNativePush(onNotification);
+  }
+  return initWebPush(webMessaging, onNotification);
 }

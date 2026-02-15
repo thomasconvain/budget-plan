@@ -4,12 +4,12 @@ import App from './App.vue'
 import './assets/css/tailwind.css'
 import store from './store'
 import router from './router'
-import { auth, messaging } from './firebase'
+import { auth, messagingPromise } from './firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, doc, onSnapshot, collection, query, where } from 'firebase/firestore'
 import { Capacitor } from '@capacitor/core'
 import { Purchases, LOG_LEVEL } from '@revenuecat/purchases-capacitor'
-import { requestNotificationPermission, setupOnMessageListener } from './services/notifications'
+import { initPushNotifications } from './services/notifications'
 
 const REVENUECAT_KEY = 'goog_cDBJOWVyBuCtmZPVGnNzywMQPUl'
 const db = getFirestore()
@@ -69,8 +69,8 @@ router.isReady().then(() => {
       })
 
       // 5) Inicializar FCM para push notifications
-      requestNotificationPermission(messaging)
-      setupOnMessageListener(messaging, (payload) => {
+      const webMessaging = await messagingPromise
+      initPushNotifications(webMessaging, (payload) => {
         console.log('Notificación recibida en foreground:', payload)
       })
     } else {
