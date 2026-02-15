@@ -22,11 +22,16 @@
 
       <!-- Expense summary -->
       <div v-if="expense" class="bg-gray-50 rounded-xl p-3 mb-4">
-        <p class="text-xs text-gray-400">Gasto compartido</p>
+        <div class="flex items-center gap-2 mb-2">
+          <div class="flex items-center justify-center h-6 w-6 rounded-full bg-gray-200 shrink-0">
+            <UserIcon class="h-3.5 w-3.5 text-gray-500" />
+          </div>
+          <p class="text-sm font-medium text-gray-700">{{ expense.createdByName }}</p>
+        </div>
+        <p class="text-xs text-gray-400">{{ expense.category }}</p>
         <p class="text-lg font-bold text-gray-900">
           {{ currencySymbol(expense.currency) }} {{ formatNumber(expense.amount, expense.currency) }}
         </p>
-        <p class="text-xs text-gray-500">{{ expense.category }} · De {{ expense.createdByName }}</p>
       </div>
 
       <!-- Loading goals -->
@@ -94,6 +99,7 @@ import {
   CreditCardIcon,
   BanknotesIcon,
   CheckCircleIcon,
+  UserIcon,
 } from '@heroicons/vue/24/outline';
 import { fetchGoals } from '@/utils/business/goals';
 import { assignSharedExpense } from '@/utils/business/sharedExpenses';

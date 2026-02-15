@@ -1,30 +1,16 @@
 <template>
   <div v-if="user">
-    <!-- <UserDirecction /> -->
     <ListGoals />
     <SubscriptionCheckout class="mt-12"/>
   </div>
 </template>
 
-<script>
-// import UserDirecction from '../components/UserDirection.vue'
-import ListGoals from '../components/ListGoals.vue'
-import SubscriptionCheckout from '../components/SubscriptionCheckout.vue'
-import { mapGetters } from 'vuex';
+<script setup>
+import { computed } from 'vue';
+import { useStore } from 'vuex';
+import ListGoals from '../components/ListGoals.vue';
+import SubscriptionCheckout from '../components/SubscriptionCheckout.vue';
 
-export default {
-  name: 'App',
-  components: {
-    // UserDirecction,
-    ListGoals,
-    SubscriptionCheckout
-  },
-  computed: {
-    ...mapGetters(['user']),
-  }
-}
+const store = useStore();
+const user = computed(() => store.getters.user);
 </script>
-
-<style>
-
-</style>

@@ -2,7 +2,7 @@
 
   <!-- Splash screen -->
   <Transition name="splash">
-    <div v-if="loading" class="fixed inset-0 bg-gray-950 flex items-center justify-center z-50">
+    <div v-if="loading" class="fixed inset-0 bg-gray-950 flex items-center justify-center z-[60]">
       <img src="@/assets/img/logo.svg" alt="BudgetPlan" class="w-40 logo-pulse" />
     </div>
   </Transition>

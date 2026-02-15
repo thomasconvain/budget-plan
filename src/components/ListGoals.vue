@@ -19,6 +19,14 @@
         </div>
       </div>
     </div>
+
+    <PendingSharedExpenses
+      v-if="pendingExpenses.length"
+      class="mb-8"
+      :expenses="pendingExpenses"
+      @updated="refreshExpenses"
+    />
+
     <h1 class="text-2xl font-semibold mb-4">Tus tarjetas</h1>
     <div v-if="creditCardGoals.length > 0" class="max-w-4xl mx-auto space-y-3">
       <div
@@ -230,6 +238,8 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import {fetchGoals, fetchArchivedGoals} from '@/utils/business/goals.js'
 import { fetchUser } from '@/utils/business/users.js';
 import LoadingSpinner from '../components/LoadingSpinner.vue'
+import PendingSharedExpenses from '@/components/contacts/PendingSharedExpenses.vue';
+import { fetchPendingSharedExpenses } from '@/utils/business/sharedExpenses';
 import { formatNumber } from '../utils/currencyFormatters.js';
 import { convertToMainCurrency } from '../utils/currencyConverter';
 import { calculateBillingPeriod } from '@/utils/billingPeriod';
@@ -254,6 +264,11 @@ const currencyOptions = ref([
 const selectedMainCurrency = ref('CLP');
 const goals = ref([]);
 const goalsTotalBalance = ref(0);
+const pendingExpenses = ref([]);
+
+const refreshExpenses = async () => {
+  pendingExpenses.value = await fetchPendingSharedExpenses();
+};
 
 const creditCardGoals = computed(() => goals.value.filter(goal => goal.type === 'Tarjeta de crédito' && goal.isArchived !== true));
 const bankAccountGoals = computed(() => goals.value.filter(goal => goal.type === 'Cuenta bancaria'));
@@ -322,7 +337,7 @@ const saveMigration = async () => {
 onMounted(() => {
   onAuthStateChanged(auth, async user => {
     if (!user) return
-    await recalculateTotals()
+    await Promise.all([recalculateTotals(), refreshExpenses()])
     // referencia al documento de usuario
     userDocRef.value = doc(db, 'users', user.uid)
     const snap = await getDoc(userDocRef.value)

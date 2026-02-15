@@ -132,6 +132,37 @@ export async function getSharedRecipientNamesByPaymentIds(sourcePaymentIds) {
 }
 
 /**
+ * Devuelve un mapa recipientPaymentId -> { createdByName, amount, currency }
+ * para los pagos que el usuario recibió como destinatario de un gasto compartido.
+ * @param {string[]} paymentIds - IDs de payments del goal actual
+ * @returns {Promise<Record<string, { createdByName: string, amount: number, currency: string }>>}
+ */
+export async function getSharedCreatorNamesByPaymentIds(paymentIds) {
+  const user = auth.currentUser;
+  if (!user || !paymentIds.length) return {};
+
+  const q = query(
+    collection(db, 'sharedExpenses'),
+    where('recipientUserId', '==', user.uid),
+    where('status', '==', 'assigned')
+  );
+  const snap = await getDocs(q);
+  const idSet = new Set(paymentIds);
+  const map = {};
+  snap.docs.forEach(d => {
+    const data = d.data();
+    if (idSet.has(data.recipientPaymentId) && data.createdByName) {
+      map[data.recipientPaymentId] = {
+        createdByName: data.createdByName,
+        amount: Number(data.originalAmount) || 0,
+        currency: data.currency || '',
+      };
+    }
+  });
+  return map;
+}
+
+/**
  * Obtiene los gastos compartidos pendientes para el usuario actual (como destinatario).
  */
 export async function fetchPendingSharedExpenses() {

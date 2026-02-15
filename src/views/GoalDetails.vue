@@ -177,10 +177,14 @@
               </div>
               <p v-if="payment.sharedInfo" class="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
                 <UserGroupIcon class="h-3.5 w-3.5 shrink-0 text-gray-400" />
-                <span>{{ payment.sharedInfo.recipientName }}</span>
+                <span>Compartiste este gasto con {{ payment.sharedInfo.recipientName }}</span>
                 <span v-if="payment.sharedInfo.originalAmount" class="text-gray-400">
                   · Total original: {{ currencySymbol(payment.sharedInfo.currency) }} {{ formatNumber(payment.sharedInfo.originalAmount, payment.sharedInfo.currency) }}
                 </span>
+              </p>
+              <p v-if="payment.sharedFrom" class="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                <UserGroupIcon class="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                <span>{{ payment.sharedFrom.createdByName }} compartió este gasto</span>
               </p>
               <p v-if="payment.currency !== goal.mainCurrency" class="text-xs text-gray-400 mt-0.5">
                 {{ currencySymbol(goal.mainCurrency) }} {{ formatNumber(payment.convertedAmount, goal.mainCurrency) }}
@@ -287,7 +291,7 @@ import { formatDate, formatDateToLargeString } from '../utils/dateFormatter';
 import { formatNumber } from '../utils/currencyFormatters';
 import { convertToMainCurrency } from '../utils/currencyConverter';
 import { calculateBillingPeriod } from '../utils/billingPeriod';
-import { getSharedRecipientNamesByPaymentIds } from '../utils/business/sharedExpenses';
+import { getSharedRecipientNamesByPaymentIds, getSharedCreatorNamesByPaymentIds } from '../utils/business/sharedExpenses';
 import {
   TitleComponent,
   TooltipComponent,
@@ -455,10 +459,14 @@ const fetchPaymentsForGoal = async (goalId) => {
   );
 
   const paymentIds = list.map(p => p.id);
-  const sharedMap = await getSharedRecipientNamesByPaymentIds(paymentIds);
+  const [sharedMap, creatorMap] = await Promise.all([
+    getSharedRecipientNamesByPaymentIds(paymentIds),
+    getSharedCreatorNamesByPaymentIds(paymentIds),
+  ]);
   payments.value = list.map(p => ({
     ...p,
-    sharedInfo: sharedMap[p.id] || null
+    sharedInfo: sharedMap[p.id] || null,
+    sharedFrom: creatorMap[p.id] || null,
   }));
 };
 
