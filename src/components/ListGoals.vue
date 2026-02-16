@@ -1,6 +1,6 @@
 <template>
   <div v-if="isLoading">
-    <LoadingSpinner />
+    <DashboardSkeleton />
   </div>
   <div v-else>
     <div class="relative mb-12">
@@ -237,7 +237,7 @@ import { getFirestore, Timestamp, collection, getDocs, getDoc, updateDoc, query,
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import {fetchGoals, fetchArchivedGoals} from '@/utils/business/goals.js'
 import { fetchUser } from '@/utils/business/users.js';
-import LoadingSpinner from '../components/LoadingSpinner.vue'
+import DashboardSkeleton from './skeletons/DashboardSkeleton.vue'
 import PendingSharedExpenses from '@/components/contacts/PendingSharedExpenses.vue';
 import { fetchPendingSharedExpenses } from '@/utils/business/sharedExpenses';
 import { formatNumber } from '../utils/currencyFormatters.js';

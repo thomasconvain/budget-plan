@@ -1,6 +1,6 @@
 <template>
-  <div v-if="isLoading" class="flex justify-center py-12">
-    <LoadingSpinner />
+  <div v-if="isLoading">
+    <ContactsSkeleton />
   </div>
   <div v-else ref="contentRef" class="max-w-2xl mx-auto px-4 pb-20">
     <div class="flex items-center justify-between mt-6 mb-6">
@@ -37,7 +37,7 @@
 <script setup>
 import { ref, nextTick, onMounted } from 'vue';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import LoadingSpinner from '@/components/LoadingSpinner.vue';
+import ContactsSkeleton from '@/components/skeletons/ContactsSkeleton.vue';
 import InvitationForm from '@/components/contacts/InvitationForm.vue';
 import InvitationList from '@/components/contacts/InvitationList.vue';
 import ContactList from '@/components/contacts/ContactList.vue';

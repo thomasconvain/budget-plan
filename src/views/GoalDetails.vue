@@ -1,6 +1,6 @@
 <template>
   <div v-if="isLoading">
-    <LoadingSpinner />
+    <GoalDetailsSkeleton />
   </div>
   <div v-else>
 
@@ -285,7 +285,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { Timestamp, getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import UserPaymentsList from '../components/UserPaymentsList.vue';
-import LoadingSpinner from '../components/LoadingSpinner.vue';
+import GoalDetailsSkeleton from '../components/skeletons/GoalDetailsSkeleton.vue';
 import ShareExpensePanel from '../components/ShareExpensePanel.vue';
 import { formatDate, formatDateToLargeString } from '../utils/dateFormatter';
 import { formatNumber } from '../utils/currencyFormatters';

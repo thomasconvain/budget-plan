@@ -10,6 +10,7 @@ import { getFirestore, doc, onSnapshot, collection, query, where } from 'firebas
 import { Capacitor } from '@capacitor/core'
 import { Purchases, LOG_LEVEL } from '@revenuecat/purchases-capacitor'
 import { initPushNotifications } from './services/notifications'
+import { createNotification } from './utils/business/notifications'
 
 const REVENUECAT_KEY = 'goog_cDBJOWVyBuCtmZPVGnNzywMQPUl'
 const db = getFirestore()
@@ -48,14 +49,31 @@ onAuthStateChanged(auth, async user => {
       store.commit('setPremium', !!data.premium)
     })
 
-    // 4) Listeners en tiempo real para badges de notificaciones
+    // 4) Listeners en tiempo real para badges de contactos
     const pendingExpensesQuery = query(
       collection(db, 'sharedExpenses'),
       where('recipientUserId', '==', user.uid),
       where('status', '==', 'pending')
     )
+    let isFirstExpenseSnapshot = true
     onSnapshot(pendingExpensesQuery, snap => {
       store.commit('setPendingSharedExpensesCount', snap.size)
+      if (isFirstExpenseSnapshot) {
+        isFirstExpenseSnapshot = false
+        return
+      }
+      snap.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          const data = change.doc.data()
+          createNotification({
+            userId: user.uid,
+            type: 'shared_expense',
+            title: 'Gasto compartido recibido',
+            message: `${data.createdByName} compartió un gasto de ${data.currency} ${data.amount}`,
+            relatedId: change.doc.id,
+          })
+        }
+      })
     })
 
     const pendingInvitationsQuery = query(
@@ -63,8 +81,35 @@ onAuthStateChanged(auth, async user => {
       where('toUserId', '==', user.uid),
       where('status', '==', 'pending')
     )
+    let isFirstInvitationSnapshot = true
     onSnapshot(pendingInvitationsQuery, snap => {
       store.commit('setPendingInvitationsCount', snap.size)
+      if (isFirstInvitationSnapshot) {
+        isFirstInvitationSnapshot = false
+        return
+      }
+      snap.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          const data = change.doc.data()
+          createNotification({
+            userId: user.uid,
+            type: 'invitation',
+            title: 'Nueva invitación',
+            message: `${data.fromName} te envió una invitación de contacto`,
+            relatedId: change.doc.id,
+          })
+        }
+      })
+    })
+
+    // 4b) Listener en tiempo real para badge de notificaciones no leídas
+    const unreadNotificationsQuery = query(
+      collection(db, 'notifications'),
+      where('userId', '==', user.uid),
+      where('read', '==', false)
+    )
+    onSnapshot(unreadNotificationsQuery, snap => {
+      store.commit('setUnreadNotificationsCount', snap.size)
     })
 
     // 5) Inicializar FCM para push notifications
@@ -78,6 +123,7 @@ onAuthStateChanged(auth, async user => {
     store.commit('setPremium', false)
     store.commit('setPendingSharedExpensesCount', 0)
     store.commit('setPendingInvitationsCount', 0)
+    store.commit('setUnreadNotificationsCount', 0)
     // Opcional: limpia RevenueCat
     await Purchases.reset()
   }

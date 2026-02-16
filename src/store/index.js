@@ -21,6 +21,7 @@ const store = createStore({
     premium: false,
     pendingSharedExpensesCount: 0,
     pendingInvitationsCount: 0,
+    unreadNotificationsCount: 0,
   },
   mutations: {
     setUser(state, user) {
@@ -43,6 +44,9 @@ const store = createStore({
     },
     setPendingInvitationsCount(state, count) {
       state.pendingInvitationsCount = count;
+    },
+    setUnreadNotificationsCount(state, count) {
+      state.unreadNotificationsCount = count;
     },
   },
   actions: {
@@ -151,6 +155,7 @@ const store = createStore({
     user: (state) => state.user,
     loading: (state) => state.loading,
     totalPendingCount: (state) => state.pendingSharedExpensesCount + state.pendingInvitationsCount,
+    unreadNotificationsCount: (state) => state.unreadNotificationsCount,
   },
 });
 

@@ -16,18 +16,18 @@
            :style="{
              height: $route.path === '/dashboard' ? '145px' :
                     $route.path.startsWith('/create-goal') ? '140px' :
-                    ($route.path.startsWith('/goal') || $route.path === '/contacts') ? `${backgroundHeight}px` :
+                    ($route.path.startsWith('/goal') || $route.path === '/contacts' || $route.path === '/notifications') ? `${backgroundHeight}px` :
                     '385px'
            }">
       </div>
-      <div class="px-10 pb-5 w-full md:max-w-4xl m-auto relative">
+      <div class="px-4 md:px-10 pb-5 w-full md:max-w-4xl m-auto relative">
         <div class="flex-grow">
           <router-view class="pb-16" @last-card-position="updateBackgroundHeight" />
         </div>
       </div>
     </div>
-    <MobileMenu v-if="isNativeApp && user"/>
-    <FooterSection v-if="!isNativeApp" class="bottom-0"/>
+    <MobileMenu v-if="user"/>
+    <FooterSection v-if="!isNativeApp" class="bottom-0 hidden md:block"/>
   </div>
 </template>
 
@@ -54,7 +54,7 @@ watch(() => route.path, () => {
 });
 
 const updateBackgroundHeight = (cardBottom) => {
-  if ((route.path.startsWith('/goal') || route.path === '/contacts') && bgContainer.value) {
+  if ((route.path.startsWith('/goal') || route.path === '/contacts' || route.path === '/notifications') && bgContainer.value) {
     const containerTop = bgContainer.value.getBoundingClientRect().top;
     backgroundHeight.value = cardBottom - containerTop;
   }
@@ -66,7 +66,6 @@ const updateBackgroundHeight = (cardBottom) => {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
   color: #2c3e50;
 }
 
