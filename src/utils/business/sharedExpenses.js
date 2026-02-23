@@ -122,10 +122,12 @@ export async function getSharedRecipientNamesByPaymentIds(sourcePaymentIds) {
     const data = d.data();
     if (idSet.has(data.sourcePaymentId) && data.recipientName) {
       map[data.sourcePaymentId] = {
+        sharedExpenseId: d.id,
         recipientName: data.recipientName,
         originalAmount: Number(data.originalAmount) || 0,
         currency: data.currency || '',
         status: data.status || '',
+        recipientComment: data.recipientComment || '',
       };
     }
   });
@@ -154,9 +156,11 @@ export async function getSharedCreatorNamesByPaymentIds(paymentIds) {
     const data = d.data();
     if (idSet.has(data.recipientPaymentId) && data.createdByName) {
       map[data.recipientPaymentId] = {
+        sharedExpenseId: d.id,
         createdByName: data.createdByName,
         amount: Number(data.originalAmount) || 0,
         currency: data.currency || '',
+        creatorComment: data.creatorComment || '',
       };
     }
   });
@@ -504,4 +508,23 @@ export async function fetchSharedExpensesWith(contactUserId) {
     ...snap1.docs.map(d => ({ id: d.id, ...d.data() })),
     ...snap2.docs.map(d => ({ id: d.id, ...d.data() })),
   ].sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
+}
+
+/**
+ * Guarda un comentario en un gasto compartido.
+ * El campo que se actualiza depende del rol del usuario (creador o destinatario).
+ * @param {string} sharedExpenseId - ID del documento sharedExpense
+ * @param {string} comment - Texto del comentario
+ */
+export async function saveSharedExpenseComment(sharedExpenseId, comment) {
+  const user = auth.currentUser;
+  if (!user || !sharedExpenseId) return;
+
+  const docRef = doc(db, 'sharedExpenses', sharedExpenseId);
+  const snap = await getDoc(docRef);
+  if (!snap.exists()) return;
+
+  const data = snap.data();
+  const field = data.createdByUserId === user.uid ? 'creatorComment' : 'recipientComment';
+  await updateDoc(docRef, { [field]: comment });
 }

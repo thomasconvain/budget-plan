@@ -155,7 +155,8 @@
             v-for="payment in dayPayments"
             :key="payment.id"
             :class="{'animate-slide-in': payment.id.startsWith('temp-')}"
-            class="flex items-center gap-3 px-4 py-3 relative">
+            class="flex items-center gap-3 px-4 py-3 relative cursor-pointer"
+            @click="openPaymentDetail(payment)">
             <!-- Icon -->
             <div
               class="flex items-center justify-center h-8 w-8 rounded-lg shrink-0"
@@ -175,17 +176,28 @@
                 />
                 <p class="text-sm font-medium text-gray-700 truncate">{{ payment.category }}</p>
               </div>
-              <p v-if="payment.sharedInfo" class="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+              <!-- Shared info: solo visible en pantallas md+ -->
+              <p v-if="payment.sharedInfo" class="hidden md:flex text-xs text-gray-500 mt-0.5 items-center gap-1">
                 <UserGroupIcon class="h-3.5 w-3.5 shrink-0 text-gray-400" />
                 <span>Compartiste este gasto con {{ payment.sharedInfo.recipientName }}</span>
                 <span v-if="payment.sharedInfo.originalAmount" class="text-gray-400">
                   · Total original: {{ currencySymbol(payment.sharedInfo.currency) }} {{ formatNumber(payment.sharedInfo.originalAmount, payment.sharedInfo.currency) }}
                 </span>
               </p>
-              <p v-if="payment.sharedFrom" class="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+              <p v-if="payment.sharedFrom" class="hidden md:flex text-xs text-gray-500 mt-0.5 items-center gap-1">
                 <UserGroupIcon class="h-3.5 w-3.5 shrink-0 text-gray-400" />
                 <span>{{ payment.sharedFrom.createdByName }} compartió este gasto</span>
               </p>
+              <!-- Indicadores compactos en mobile -->
+              <div v-if="(payment.sharedInfo || payment.sharedFrom || payment.comment)" class="flex md:hidden items-center gap-1.5 mt-1">
+                <span v-if="payment.sharedInfo || payment.sharedFrom" class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-indigo-50 rounded-md">
+                  <UserGroupIcon class="h-3 w-3 text-indigo-500" />
+                  <span class="text-[10px] font-medium text-indigo-500">Compartido</span>
+                </span>
+                <span v-if="payment.comment" class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 rounded-md">
+                  <ChatBubbleLeftIcon class="h-3 w-3 text-gray-500" />
+                </span>
+              </div>
               <p v-if="payment.currency !== goal.mainCurrency" class="text-xs text-gray-400 mt-0.5">
                 {{ currencySymbol(goal.mainCurrency) }} {{ formatNumber(payment.convertedAmount, goal.mainCurrency) }}
               </p>
@@ -196,7 +208,7 @@
                 {{ payment.category !== 'Abono a cuenta' ? '-' : '+' }}{{ currencySymbol(payment.currency) }} {{ formatNumber(Math.abs(payment.amount), payment.currency) }}
               </p>
               <button
-                @click="handleDeleteClick(payment)"
+                @click.stop="handleDeleteClick(payment)"
                 class="p-1 rounded-full border border-gray-200 text-gray-300 hover:text-red-500 hover:border-red-300 hover:bg-red-50 transition">
                 <TrashIcon class="h-3 w-3" />
               </button>
@@ -313,6 +325,101 @@
         </div>
       </div>
     </Transition>
+    <!-- Payment detail bottom sheet -->
+    <Transition name="overlay">
+      <div v-if="showPaymentDetail" class="fixed inset-0 bg-black/40 z-40" @click="showPaymentDetail = false"></div>
+    </Transition>
+    <Transition name="sheet">
+      <div
+        v-if="showPaymentDetail && selectedPayment"
+        class="fixed z-50 bg-white shadow-2xl p-6 overflow-y-auto
+               inset-x-0 bottom-0 rounded-t-2xl max-h-[80vh]
+               md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:w-full md:max-w-md md:max-h-[90vh]">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-900">Detalle del movimiento</h2>
+          <button
+            class="p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 transition"
+            @click="showPaymentDetail = false">
+            <XMarkIcon class="h-4 w-4" />
+          </button>
+        </div>
+
+        <!-- Payment info -->
+        <div class="flex items-center gap-3 mb-4">
+          <div
+            class="flex items-center justify-center h-10 w-10 rounded-xl"
+            :class="selectedPayment.category !== 'Abono a cuenta' ? 'bg-red-50' : 'bg-emerald-50'">
+            <component
+              :is="selectedPayment.category !== 'Abono a cuenta' ? ArrowUpIcon : ArrowDownIcon"
+              class="h-5 w-5"
+              :class="selectedPayment.category !== 'Abono a cuenta' ? 'text-red-500' : 'text-emerald-500'"
+            />
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-1.5">
+              <component
+                :is="getIconComponent(selectedPayment.categoryIcon)"
+                class="h-4 w-4 text-gray-400 shrink-0"
+              />
+              <p class="text-sm font-semibold text-gray-900">{{ selectedPayment.category }}</p>
+            </div>
+            <p class="text-xs text-gray-400 mt-0.5">
+              {{ formatDateToLargeString(paymentDateString(selectedPayment)) }}
+            </p>
+          </div>
+          <p class="text-base font-bold" :class="selectedPayment.category !== 'Abono a cuenta' ? 'text-gray-900' : 'text-emerald-600'">
+            {{ selectedPayment.category !== 'Abono a cuenta' ? '-' : '+' }}{{ currencySymbol(selectedPayment.currency) }} {{ formatNumber(Math.abs(selectedPayment.amount), selectedPayment.currency) }}
+          </p>
+        </div>
+
+        <!-- Shared info -->
+        <div v-if="selectedPayment.sharedInfo" class="flex items-start gap-2.5 p-3 bg-indigo-50 rounded-xl mb-4">
+          <UserGroupIcon class="h-4 w-4 text-indigo-500 shrink-0 mt-0.5" />
+          <div>
+            <p class="text-sm text-indigo-700">
+              Compartiste este gasto con <strong>{{ selectedPayment.sharedInfo.recipientName }}</strong>
+            </p>
+            <p v-if="selectedPayment.sharedInfo.originalAmount" class="text-xs text-indigo-500 mt-0.5">
+              Total original: {{ currencySymbol(selectedPayment.sharedInfo.currency) }} {{ formatNumber(selectedPayment.sharedInfo.originalAmount, selectedPayment.sharedInfo.currency) }}
+            </p>
+            <!-- Comentario del otro usuario -->
+            <p v-if="selectedPayment.sharedInfo.recipientComment" class="text-xs text-indigo-600 mt-1.5 italic">
+              "{{ selectedPayment.sharedInfo.recipientComment }}" — {{ selectedPayment.sharedInfo.recipientName }}
+            </p>
+          </div>
+        </div>
+        <div v-if="selectedPayment.sharedFrom" class="flex items-start gap-2.5 p-3 bg-indigo-50 rounded-xl mb-4">
+          <UserGroupIcon class="h-4 w-4 text-indigo-500 shrink-0 mt-0.5" />
+          <div>
+            <p class="text-sm text-indigo-700">
+              <strong>{{ selectedPayment.sharedFrom.createdByName }}</strong> compartió este gasto
+            </p>
+            <!-- Comentario del otro usuario -->
+            <p v-if="selectedPayment.sharedFrom.creatorComment" class="text-xs text-indigo-600 mt-1.5 italic">
+              "{{ selectedPayment.sharedFrom.creatorComment }}" — {{ selectedPayment.sharedFrom.createdByName }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Comment section -->
+        <div class="mt-2">
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Comentario</label>
+          <textarea
+            v-model="paymentComment"
+            rows="2"
+            placeholder="Agregar un comentario..."
+            class="block w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent text-sm text-gray-900 resize-none"
+          ></textarea>
+        </div>
+
+        <button
+          @click="savePaymentComment"
+          :disabled="savingComment"
+          class="mt-4 w-full px-4 py-3 text-sm font-medium text-white bg-gray-900 rounded-xl hover:bg-gray-800 disabled:opacity-50 transition active:scale-[0.98]">
+          {{ savingComment ? 'Guardando...' : 'Guardar comentario' }}
+        </button>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -328,7 +435,7 @@ import { formatDate, formatDateToLargeString } from '../utils/dateFormatter';
 import { formatNumber } from '../utils/currencyFormatters';
 import { convertToMainCurrency } from '../utils/currencyConverter';
 import { calculateBillingPeriod } from '../utils/billingPeriod';
-import { getSharedRecipientNamesByPaymentIds, getSharedCreatorNamesByPaymentIds, markSharedExpenseCancelledWhenRecipientDeletes, cancelSharedExpenseByCreator, cleanupCancelledSharedExpensesAsRecipient, cleanupCancelledSharedExpensesAsCreator, processBalanceAdjustments } from '../utils/business/sharedExpenses';
+import { getSharedRecipientNamesByPaymentIds, getSharedCreatorNamesByPaymentIds, markSharedExpenseCancelledWhenRecipientDeletes, cancelSharedExpenseByCreator, cleanupCancelledSharedExpensesAsRecipient, cleanupCancelledSharedExpensesAsCreator, processBalanceAdjustments, saveSharedExpenseComment } from '../utils/business/sharedExpenses';
 import {
   TitleComponent,
   TooltipComponent,
@@ -350,6 +457,7 @@ import {
   Cog6ToothIcon,
   ArrowLeftIcon,
   UserGroupIcon,
+  ChatBubbleLeftIcon,
 } from '@heroicons/vue/24/outline';
 import * as OutlineIcons from '@heroicons/vue/24/outline';
 import { Capacitor } from '@capacitor/core';
@@ -387,6 +495,10 @@ const showSharePanel = ref(false);
 const sharePaymentData = ref({ amount: 0, currency: 'CLP', category: '', categoryIcon: '', paymentId: '', goalId: '' });
 const showDeleteSharedConfirm = ref(false);
 const pendingDeletePayment = ref(null);
+const showPaymentDetail = ref(false);
+const selectedPayment = ref(null);
+const paymentComment = ref('');
+const savingComment = ref(false);
 const emit = defineEmits(['last-card-position']);
 
 const goBack = () => router.push({ name: 'Dashboard' });
@@ -417,6 +529,56 @@ const confirmDelete = () => {
   if (pendingDeletePayment.value) {
     deletePayment(pendingDeletePayment.value);
     pendingDeletePayment.value = null;
+  }
+};
+
+// Payment detail bottom sheet
+const openPaymentDetail = (payment) => {
+  if (payment.id.startsWith('temp-')) return;
+  selectedPayment.value = payment;
+  paymentComment.value = payment.comment || '';
+  showPaymentDetail.value = true;
+};
+
+const paymentDateString = (payment) => {
+  const date = payment.date instanceof Timestamp ? payment.date.toDate() : new Date(payment.date);
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const savePaymentComment = async () => {
+  if (!selectedPayment.value) return;
+  savingComment.value = true;
+  try {
+    const comment = paymentComment.value.trim();
+    const paymentId = selectedPayment.value.id;
+
+    // Guardar comentario encriptado en el payment
+    await updateDoc(doc(db, 'payments', paymentId), {
+      comment: comment ? encrypt(comment, key) : ''
+    });
+
+    // Si es compartido, guardar también en sharedExpenses para el otro usuario
+    const sharedExpenseId = selectedPayment.value.sharedInfo?.sharedExpenseId
+      || selectedPayment.value.sharedFrom?.sharedExpenseId;
+    if (sharedExpenseId) {
+      await saveSharedExpenseComment(sharedExpenseId, comment);
+    }
+
+    // Actualizar el estado local
+    const idx = payments.value.findIndex(p => p.id === paymentId);
+    if (idx !== -1) {
+      payments.value[idx] = { ...payments.value[idx], comment };
+    }
+    selectedPayment.value = { ...selectedPayment.value, comment };
+
+    showPaymentDetail.value = false;
+  } catch (error) {
+    console.error('Error al guardar comentario:', error);
+  } finally {
+    savingComment.value = false;
   }
 };
 
@@ -496,14 +658,16 @@ const fetchPaymentsForGoal = async (goalId) => {
   // 4) Descifra y convierte
   const list = await Promise.all(
     raw.map(async p => {
-      let category, categoryIcon, decryptedAmount, amount;
+      let category, categoryIcon, decryptedAmount, amount, comment = '';
 
       try {
         category     = decrypt(p.category, key);
         categoryIcon = decrypt(p.categoryIcon, key);
         decryptedAmount = decrypt(p.amount, key);
         amount = parseFloat(decryptedAmount);
-        console.log('Descifrado:', { category, categoryIcon, amount });
+        if (p.comment) {
+          comment = decrypt(p.comment, key);
+        }
       } catch (e) {
         category     = p.category;
         categoryIcon = p.categoryIcon;
@@ -521,6 +685,7 @@ const fetchPaymentsForGoal = async (goalId) => {
         category,
         categoryIcon,
         amount,
+        comment,
         convertedAmount
       };
     })
@@ -604,11 +769,11 @@ const groupedPayments = computed(() => {
   const grouped = payments.value.reduce((acc, payment) => {
     const date = payment.date instanceof Timestamp ? payment.date.toDate() : new Date(payment.date);
 
-    // Normalizar la fecha a medianoche para ignorar horas, minutos y segundos
-    const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate() +1);
-
-    // Convertir la fecha a una cadena en formato 'YYYY-MM-DD'
-    const dateString = normalizedDate.toISOString().split('T')[0];
+    // Convertir la fecha a una cadena en formato 'YYYY-MM-DD' usando hora local
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const dateString = `${yyyy}-${mm}-${dd}`;
 
     if (!acc[dateString]) {
       acc[dateString] = [];

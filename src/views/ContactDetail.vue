@@ -19,7 +19,16 @@
     </div>
 
     <!-- Balance total histórico -->
-    <h2 class="text-sm font-semibold text-white/80 mb-2">Balance pendiente total</h2>
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-sm font-semibold text-white/80">Balance pendiente total</h2>
+      <button
+        v-if="canIPay || canTheyPay"
+        class="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-lg hover:bg-emerald-400/20 transition active:scale-[0.98]"
+        @click="openSettlementSheet">
+        <BanknotesIcon class="h-3.5 w-3.5" />
+        Saldar deudas
+      </button>
+    </div>
     <div v-if="allTimeCurrencies.length" class="grid gap-2 mb-4" :class="allTimeCurrencies.length > 1 ? 'grid-cols-2' : 'grid-cols-1'">
       <div
         v-for="cur in allTimeCurrencies"
@@ -35,40 +44,32 @@
       </div>
     </div>
     <div v-else class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
-      <p class="text-sm text-gray-400 text-center">Sin gastos compartidos</p>
+      <p class="text-sm text-gray-400 text-center">Sin balance pendiente</p>
     </div>
-
-    <!-- Botón registrar liquidación -->
-    <button
-      v-if="canIPay || canTheyPay"
-      class="w-full px-4 py-3 text-sm font-medium text-white bg-gray-900 rounded-xl hover:bg-gray-800 transition active:scale-[0.98] mb-6"
-      @click="openSettlementSheet">
-      Registrar liquidación
-    </button>
 
     <!-- Filtro de fechas -->
     <div class="flex gap-3 mb-4">
       <div class="flex-1">
-        <label class="block text-xs font-medium text-gray-500 mb-1">Desde</label>
+        <label class="block text-xs font-medium text-white/60 mb-1">Desde</label>
         <input
           type="date"
           v-model="dateFrom"
-          class="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+          class="w-full px-3 py-2 text-sm bg-white/10 text-white border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-white/20"
         />
       </div>
       <div class="flex-1">
-        <label class="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
+        <label class="block text-xs font-medium text-white/60 mb-1">Hasta</label>
         <input
           type="date"
           v-model="dateTo"
-          class="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+          class="w-full px-3 py-2 text-sm bg-white/10 text-white border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-white/20"
         />
       </div>
     </div>
 
     <!-- Balance en el período -->
-    <h2 class="text-sm font-semibold text-gray-700 mb-2">Balance en el período</h2>
-    <div v-if="filteredCurrencies.length" class="grid gap-2 mb-6" :class="filteredCurrencies.length > 1 ? 'grid-cols-2' : 'grid-cols-1'">
+    <h2 class="text-sm font-semibold text-white/80 mb-2">Balance en el período</h2>
+    <div v-if="filteredCurrencies.length" ref="periodBalanceRef" class="grid gap-2 mb-6" :class="filteredCurrencies.length > 1 ? 'grid-cols-2' : 'grid-cols-1'">
       <div
         v-for="cur in filteredCurrencies"
         :key="'filt-' + cur"
@@ -82,8 +83,8 @@
         </p>
       </div>
     </div>
-    <div v-else class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
-      <p class="text-sm text-gray-400 text-center">Sin movimientos en este período</p>
+    <div v-else ref="periodBalanceRef" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
+      <p class="text-sm text-gray-400 text-center">Sin balance pendiente en este período</p>
     </div>
 
     <!-- Lista cronológica -->
@@ -258,6 +259,7 @@ const props = defineProps({
 // State
 const isLoading = ref(true);
 const contentRef = ref(null);
+const periodBalanceRef = ref(null);
 const contact = ref(null);
 const allExpenses = ref([]);
 const allSettlements = ref([]);
@@ -572,13 +574,12 @@ const emitBackgroundHeight = () => {
   nextTick(() => {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        if (!contentRef.value) return;
-        const cards = contentRef.value.querySelectorAll('.rounded-2xl');
-        const lastCard = cards[cards.length - 1];
-        if (lastCard) {
-          const rect = lastCard.getBoundingClientRect();
-          emit('last-card-position', rect.top + rect.height / 2);
-        }
+        const el = periodBalanceRef.value;
+        if (!el) return;
+        // For a grid container, use the first card inside; otherwise use the element itself
+        const card = el.querySelector?.('.rounded-2xl') || el;
+        const rect = card.getBoundingClientRect();
+        emit('last-card-position', rect.top + rect.height / 2);
       });
     });
   });

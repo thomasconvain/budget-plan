@@ -8,9 +8,17 @@ import { auth, messagingPromise } from './firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, doc, onSnapshot, collection, query, where } from 'firebase/firestore'
 import { Capacitor } from '@capacitor/core'
+import { StatusBar, Style } from '@capacitor/status-bar'
 import { Purchases, LOG_LEVEL } from '@revenuecat/purchases-capacitor'
 import { initPushNotifications } from './services/notifications'
 import { createNotification } from './utils/business/notifications'
+
+// Configurar StatusBar para que no se superponga con la app
+if (Capacitor.isNativePlatform()) {
+  StatusBar.setOverlaysWebView({ overlay: false })
+  StatusBar.setStyle({ style: Style.Dark })
+  StatusBar.setBackgroundColor({ color: '#030712' }) // gray-950
+}
 
 const REVENUECAT_KEY = 'goog_cDBJOWVyBuCtmZPVGnNzywMQPUl'
 const db = getFirestore()

@@ -16,7 +16,7 @@
            :style="{
              height: $route.path === '/dashboard' ? '145px' :
                     $route.path.startsWith('/create-goal') ? '140px' :
-                    ($route.path.startsWith('/goal') || $route.path === '/contacts' || $route.path === '/notifications') ? `${backgroundHeight}px` :
+                    ($route.path.startsWith('/goal') || $route.path.startsWith('/contacts') || $route.path === '/notifications') ? `${backgroundHeight}px` :
                     '385px'
            }">
       </div>
@@ -54,7 +54,7 @@ watch(() => route.path, () => {
 });
 
 const updateBackgroundHeight = (cardBottom) => {
-  if ((route.path.startsWith('/goal') || route.path === '/contacts' || route.path === '/notifications') && bgContainer.value) {
+  if ((route.path.startsWith('/goal') || route.path.startsWith('/contacts') || route.path === '/notifications') && bgContainer.value) {
     const containerTop = bgContainer.value.getBoundingClientRect().top;
     backgroundHeight.value = cardBottom - containerTop;
   }
@@ -67,6 +67,8 @@ const updateBackgroundHeight = (cardBottom) => {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .logo-pulse {

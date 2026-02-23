@@ -1,7 +1,7 @@
 <template>
   <div v-if="contacts.length">
     <h3 class="text-sm font-semibold text-white mb-2">Mis contactos</h3>
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-50">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-50 overflow-hidden">
       <div
         v-for="contact in contacts"
         :key="contact.userId"
