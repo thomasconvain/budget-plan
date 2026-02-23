@@ -16,6 +16,7 @@ export const formatDate = (timestamp) => {
 
 export const formatDateToLargeString = (dateString) => {
   const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  const date = new Date(dateString);
+  const [y, m, d] = dateString.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
   return new Intl.DateTimeFormat('es-ES', options).format(date);
 };

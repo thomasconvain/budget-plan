@@ -196,7 +196,7 @@
                 {{ payment.category !== 'Abono a cuenta' ? '-' : '+' }}{{ currencySymbol(payment.currency) }} {{ formatNumber(Math.abs(payment.amount), payment.currency) }}
               </p>
               <button
-                @click="deletePayment(payment)"
+                @click="handleDeleteClick(payment)"
                 class="p-1 rounded-full border border-gray-200 text-gray-300 hover:text-red-500 hover:border-red-300 hover:bg-red-50 transition">
                 <TrashIcon class="h-3 w-3" />
               </button>
@@ -276,6 +276,43 @@
       @close="showSharePanel = false"
       @shared="onSharedExpense"
     />
+
+    <!-- Confirmación: eliminar gasto compartido -->
+    <Transition name="overlay">
+      <div v-if="showDeleteSharedConfirm" class="fixed inset-0 bg-black/40 z-40" @click="showDeleteSharedConfirm = false"></div>
+    </Transition>
+    <Transition name="sheet">
+      <div
+        v-if="showDeleteSharedConfirm"
+        class="fixed z-50 bg-white shadow-2xl p-6
+               inset-x-0 bottom-0 rounded-t-2xl
+               md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:w-full md:max-w-sm">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-semibold text-gray-900">Eliminar gasto compartido</h2>
+          <button
+            class="p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 transition"
+            @click="showDeleteSharedConfirm = false">
+            <XMarkIcon class="h-4 w-4" />
+          </button>
+        </div>
+        <div class="flex items-start gap-3 p-3 bg-amber-50 rounded-xl mb-5">
+          <UserGroupIcon class="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+          <p class="text-sm text-amber-700">{{ deleteSharedConfirmMessage }}</p>
+        </div>
+        <div class="flex gap-2">
+          <button
+            @click="showDeleteSharedConfirm = false"
+            class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition">
+            Cancelar
+          </button>
+          <button
+            @click="confirmDelete"
+            class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-500 rounded-xl hover:bg-red-600 transition active:scale-[0.98]">
+            Eliminar para ambos
+          </button>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -291,7 +328,7 @@ import { formatDate, formatDateToLargeString } from '../utils/dateFormatter';
 import { formatNumber } from '../utils/currencyFormatters';
 import { convertToMainCurrency } from '../utils/currencyConverter';
 import { calculateBillingPeriod } from '../utils/billingPeriod';
-import { getSharedRecipientNamesByPaymentIds, getSharedCreatorNamesByPaymentIds } from '../utils/business/sharedExpenses';
+import { getSharedRecipientNamesByPaymentIds, getSharedCreatorNamesByPaymentIds, markSharedExpenseCancelledWhenRecipientDeletes, cancelSharedExpenseByCreator, cleanupCancelledSharedExpensesAsRecipient, cleanupCancelledSharedExpensesAsCreator, processBalanceAdjustments } from '../utils/business/sharedExpenses';
 import {
   TitleComponent,
   TooltipComponent,
@@ -348,9 +385,40 @@ const balanceToUpdate = ref(0);
 const lastCardRef = ref(null);
 const showSharePanel = ref(false);
 const sharePaymentData = ref({ amount: 0, currency: 'CLP', category: '', categoryIcon: '', paymentId: '', goalId: '' });
+const showDeleteSharedConfirm = ref(false);
+const pendingDeletePayment = ref(null);
 const emit = defineEmits(['last-card-position']);
 
 const goBack = () => router.push({ name: 'Dashboard' });
+
+const deleteSharedConfirmMessage = computed(() => {
+  if (!pendingDeletePayment.value) return '';
+  if (pendingDeletePayment.value.sharedInfo) {
+    return `Este gasto fue compartido con ${pendingDeletePayment.value.sharedInfo.recipientName}. Al eliminarlo, también se eliminará de su cuenta.`;
+  }
+  if (pendingDeletePayment.value.sharedFrom) {
+    return `Este gasto fue compartido por ${pendingDeletePayment.value.sharedFrom.createdByName}. Al eliminarlo, también se eliminará de su cuenta.`;
+  }
+  return '';
+});
+
+const handleDeleteClick = (payment) => {
+  const isShared = !!payment.sharedInfo || !!payment.sharedFrom;
+  if (isShared) {
+    pendingDeletePayment.value = payment;
+    showDeleteSharedConfirm.value = true;
+  } else {
+    deletePayment(payment);
+  }
+};
+
+const confirmDelete = () => {
+  showDeleteSharedConfirm.value = false;
+  if (pendingDeletePayment.value) {
+    deletePayment(pendingDeletePayment.value);
+    pendingDeletePayment.value = null;
+  }
+};
 
 // Icon helper
 const getIconComponent = name => OutlineIcons[name] || null;
@@ -697,6 +765,10 @@ const deletePayment = async p => {
   // Realizar las operaciones de base de datos en segundo plano
   try {
     const newBalToEncrypt = newBal.toString();
+    // Si es el creador eliminando su pago origen, cancelar el gasto compartido asignado
+    await cancelSharedExpenseByCreator(p.id);
+    // Si es el destinatario eliminando su pago recibido, marcar el sharedExpense como cancelado
+    await markSharedExpenseCancelledWhenRecipientDeletes(p.id);
     await deleteDoc(doc(db, 'payments', p.id));
     await updateDoc(doc(db, 'goals', route.params.goalId), { 
       currentBalanceOnAccount: encrypt(newBalToEncrypt, key) 
@@ -717,6 +789,23 @@ onMounted(() => {
       const id = route.params.goalId;
       await fetchGoalDetails(id);
       await fetchPaymentsForGoal(id);
+
+      // Limpiar pagos cuyo gasto compartido fue cancelado por la otra parte
+      const currentPaymentIds = payments.value.map(p => p.id);
+      const [deletedAsRecipient, deletedAsCreator] = await Promise.all([
+        cleanupCancelledSharedExpensesAsRecipient(currentPaymentIds, id, goal.value.type),
+        cleanupCancelledSharedExpensesAsCreator(currentPaymentIds, id, goal.value.type, goal.value.mainCurrency),
+      ]);
+      const allCleaned = [...deletedAsRecipient, ...deletedAsCreator];
+      if (allCleaned.length > 0) {
+        payments.value = payments.value.filter(p => !allCleaned.includes(p.id));
+      }
+
+      // Aplicar ajustes de balance pendientes (por si la Cloud Function ya eliminó el payment)
+      await processBalanceAdjustments();
+      // Re-leer el goal para reflejar cualquier cambio de balance
+      await fetchGoalDetails(id);
+
       isLoading.value = false;
       
       // Emitir la posición del último card después de que el browser haya pintado

@@ -7,6 +7,7 @@ import Dashboard from '@/views/Dashboard.vue';
 import CreateGoal from '@/views/CreateGoal.vue';
 import Contacts from '@/views/Contacts.vue';
 import Notifications from '@/views/Notifications.vue';
+import ContactDetail from '@/views/ContactDetail.vue';
 
 const routes = [
   {
@@ -48,6 +49,15 @@ const routes = [
     path: '/contacts',
     name: 'Contacts',
     component: Contacts,
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/contacts/:contactId',
+    name: 'ContactDetail',
+    component: ContactDetail,
+    props: true,
     meta: {
       requiresAuth: true
     }

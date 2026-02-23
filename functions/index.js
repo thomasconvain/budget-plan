@@ -147,6 +147,59 @@ exports.onSharedExpenseCreated = functions.firestore
       return null;
     });
 
+// ─── Trigger: al eliminar un payment, propagar a gastos compartidos ─
+exports.onPaymentDeleted = functions.firestore
+    .document("payments/{paymentId}")
+    .onDelete(async (snap, context) => {
+      const deletedPaymentId = context.params.paymentId;
+      const firestore = admin.firestore();
+
+      const sharedSnap = await firestore.collection("sharedExpenses")
+          .where("sourcePaymentId", "==", deletedPaymentId)
+          .get();
+
+      if (sharedSnap.empty) return null;
+
+      const batch = firestore.batch();
+
+      for (const docSnap of sharedSnap.docs) {
+        const data = docSnap.data();
+        const hasRevertData = data.status === "assigned" &&
+            data.recipientPaymentId &&
+            data.recipientGoalId &&
+            data.recipientAmountInMainCurrency != null &&
+            data.recipientGoalType;
+
+        if (hasRevertData) {
+          const recipientPaymentRef =
+              firestore.doc(`payments/${data.recipientPaymentId}`);
+          const recipientPaymentSnap = await recipientPaymentRef.get();
+          if (recipientPaymentSnap.exists) {
+            batch.delete(recipientPaymentRef);
+          }
+
+          const adjRef = firestore.collection("balanceAdjustments").doc();
+          batch.set(adjRef, {
+            userId: data.recipientUserId,
+            goalId: data.recipientGoalId,
+            amountInMainCurrency: data.recipientAmountInMainCurrency,
+            goalType: data.recipientGoalType,
+            sharedExpenseId: docSnap.id,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+        }
+
+        batch.update(docSnap.ref, {
+          status: "cancelled",
+          cancelledBy: "creator",
+          cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+
+      await batch.commit();
+      return null;
+    });
+
 // ─── Trigger: push notification al crear invitación ───────────────
 exports.onInvitationCreated = functions.firestore
     .document("invitations/{invitationId}")
@@ -175,6 +228,93 @@ exports.onInvitationCreated = functions.firestore
       } catch (err) {
         console.error("Error sending invitation push:", err);
       }
+      return null;
+    });
+
+// ─── Trigger: notificaciones al cancelar un gasto compartido ──────
+exports.onSharedExpenseCancelled = functions.firestore
+    .document("sharedExpenses/{expenseId}")
+    .onUpdate(async (change, context) => {
+      const before = change.before.data();
+      const after = change.after.data();
+
+      // Solo actuar cuando el status cambia a cancelled
+      if (before.status === "cancelled" || after.status !== "cancelled") {
+        return null;
+      }
+
+      const cancelledBy = after.cancelledBy;
+      const firestore = admin.firestore();
+
+      let notifyUserId;
+      let notifyTitle;
+      let notifyBody;
+
+      if (cancelledBy === "creator") {
+        // Notificar al destinatario
+        notifyUserId = after.recipientUserId;
+        notifyTitle = "Gasto compartido cancelado";
+        const creatorName = after.createdByName || "Alguien";
+        const cat = after.category || "una categoría";
+        notifyBody = `${creatorName} canceló el gasto compartido de ${cat}`;
+      } else if (cancelledBy === "recipient") {
+        // Notificar al creador
+        notifyUserId = after.createdByUserId;
+        notifyTitle = "Gasto compartido rechazado";
+        const recipientName = after.recipientName || "El destinatario";
+        const category = after.category || "una categoría";
+        notifyBody =
+          `${recipientName} rechazó el gasto compartido de ${category}`;
+      } else {
+        return null;
+      }
+
+      if (!notifyUserId) return null;
+
+      // Crear notificación in-app
+      try {
+        await firestore.collection("notifications").add({
+          userId: notifyUserId,
+          type: "shared_expense_cancelled",
+          title: notifyTitle,
+          message: notifyBody,
+          relatedId: context.params.expenseId,
+          read: false,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      } catch (err) {
+        console.error("Error creando notificación in-app:", err);
+      }
+
+      // Enviar push notification
+      const userDoc = await firestore.doc(`users/${notifyUserId}`).get();
+      if (!userDoc.exists) return null;
+
+      const fcmToken = userDoc.data().fcmToken;
+      if (!fcmToken) return null;
+
+      const message = {
+        token: fcmToken,
+        notification: {
+          title: notifyTitle,
+          body: notifyBody,
+        },
+        data: {
+          type: "shared_expense_cancelled",
+          expenseId: context.params.expenseId,
+        },
+      };
+
+      try {
+        await admin.messaging().send(message);
+      } catch (err) {
+        console.error("Error enviando push notification:", err);
+        if (err.code === "messaging/registration-token-not-registered") {
+          await firestore.doc(`users/${notifyUserId}`)
+              .update({fcmToken: admin.firestore.FieldValue.delete()});
+        }
+      }
+
       return null;
     });
 

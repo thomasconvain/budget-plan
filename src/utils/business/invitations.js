@@ -188,3 +188,41 @@ export async function fetchContacts() {
 
   return contacts;
 }
+
+/**
+ * Obtiene la información de un contacto específico por su userId.
+ * @param {string} contactUserId - UID del contacto
+ * @returns {Promise<{ userId: string, name: string, email: string } | null>}
+ */
+export async function fetchContactById(contactUserId) {
+  const user = auth.currentUser;
+  if (!user) return null;
+
+  const sentQ = query(
+    collection(db, 'invitations'),
+    where('fromUserId', '==', user.uid),
+    where('toUserId', '==', contactUserId),
+    where('status', '==', 'accepted')
+  );
+  const receivedQ = query(
+    collection(db, 'invitations'),
+    where('toUserId', '==', user.uid),
+    where('fromUserId', '==', contactUserId),
+    where('status', '==', 'accepted')
+  );
+
+  const [sentSnap, receivedSnap] = await Promise.all([
+    getDocs(sentQ),
+    getDocs(receivedQ)
+  ]);
+
+  if (!sentSnap.empty) {
+    const data = sentSnap.docs[0].data();
+    return { userId: data.toUserId, name: data.toName, email: data.toEmail };
+  }
+  if (!receivedSnap.empty) {
+    const data = receivedSnap.docs[0].data();
+    return { userId: data.fromUserId, name: data.fromName, email: data.fromEmail };
+  }
+  return null;
+}

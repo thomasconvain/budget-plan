@@ -44,7 +44,7 @@ service cloud.firestore {
         && resource.data.status == 'pending';
     }
 
-    // Gastos compartidos: ambas partes pueden leer; creador crea; destinatario actualiza (asignar)
+    // Gastos compartidos: ambas partes pueden leer; creador crea; ambas partes pueden actualizar
     match /sharedExpenses/{expenseId} {
       allow read: if request.auth != null
         && (resource.data.createdByUserId == request.auth.uid
@@ -52,7 +52,27 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.resource.data.createdByUserId == request.auth.uid;
       allow update: if request.auth != null
-        && resource.data.recipientUserId == request.auth.uid;
+        && (resource.data.recipientUserId == request.auth.uid
+            || resource.data.createdByUserId == request.auth.uid);
+    }
+
+    // Ajustes de balance: cuando el creador elimina un gasto compartido, el backend crea
+    // estos docs para que el destinatario aplique el revert. Solo el destinatario puede leer/eliminar.
+    match /balanceAdjustments/{adjId} {
+      allow read, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if false; // Solo Cloud Functions crea
+    }
+
+    // Liquidaciones: ambas partes pueden leer; cualquiera de las dos puede crear
+    match /settlements/{settlementId} {
+      allow read: if request.auth != null
+        && (resource.data.fromUserId == request.auth.uid
+            || resource.data.toUserId == request.auth.uid);
+      allow create: if request.auth != null
+        && (request.resource.data.fromUserId == request.auth.uid
+            || request.resource.data.toUserId == request.auth.uid)
+        && request.resource.data.createdByUserId == request.auth.uid;
+      allow update, delete: if false;
     }
 
     // Notificaciones: el dueño puede leer y actualizar; cualquier autenticado puede crear

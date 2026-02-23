@@ -11,6 +11,7 @@ import {
   startAfter
 } from 'firebase/firestore';
 import { deriveKey, decrypt } from '@/services/encryption';
+import { processBalanceAdjustments } from '@/utils/business/sharedExpenses';
 
 const auth = getAuth();
 const db = getFirestore();
@@ -30,6 +31,9 @@ function tryDecrypt(strOrFallback, key, parser = x => x) {
 export const fetchGoals = async () => {
   const user = auth.currentUser;
   if (!user) return [];
+
+  // 0) Aplicar ajustes de balance pendientes (gastos compartidos eliminados por el creador)
+  await processBalanceAdjustments();
 
   // 1) Deriva la clave una sola vez por llamada
   const key = deriveKey(user.uid);

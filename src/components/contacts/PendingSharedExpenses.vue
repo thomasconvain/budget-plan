@@ -38,7 +38,7 @@
           </button>
           <button
             class="flex-1 sm:flex-none px-6 py-2 text-xs font-medium text-gray-500 bg-gray-100 rounded-xl hover:bg-gray-200 transition"
-            @click="handleDismiss(expense.id)">
+            @click="openDismissConfirm(expense)">
             Rechazar
           </button>
         </div>
@@ -52,12 +52,53 @@
       @close="showAssignModal = false"
       @assigned="onAssigned"
     />
+
+    <!-- Confirmación: rechazar gasto compartido -->
+    <Transition name="overlay">
+      <div v-if="showDismissConfirm" class="fixed inset-0 bg-black/40 z-40" @click="showDismissConfirm = false"></div>
+    </Transition>
+    <Transition name="sheet">
+      <div
+        v-if="showDismissConfirm"
+        class="fixed z-50 bg-white shadow-2xl p-6
+               inset-x-0 bottom-0 rounded-t-2xl
+               md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:w-full md:max-w-sm">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-semibold text-gray-900">Rechazar gasto compartido</h2>
+          <button
+            class="p-1.5 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 transition"
+            @click="showDismissConfirm = false">
+            <XMarkIcon class="h-4 w-4" />
+          </button>
+        </div>
+        <div class="flex items-start gap-3 p-3 bg-amber-50 rounded-xl mb-5">
+          <UserGroupIcon class="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+          <p class="text-sm text-amber-700">
+            Este gasto fue compartido por <strong>{{ pendingDismissExpense?.createdByName }}</strong>.
+            Al rechazarlo, también se eliminará de su cuenta.
+          </p>
+        </div>
+        <div class="flex gap-2">
+          <button
+            @click="showDismissConfirm = false"
+            class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition">
+            Cancelar
+          </button>
+          <button
+            @click="confirmDismiss"
+            class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-500 rounded-xl hover:bg-red-600 transition active:scale-[0.98]">
+            Rechazar para ambos
+          </button>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
 import * as OutlineIcons from '@heroicons/vue/24/outline';
+import { XMarkIcon, UserGroupIcon } from '@heroicons/vue/24/outline';
 import { formatNumber } from '@/utils/currencyFormatters';
 import { dismissSharedExpense } from '@/utils/business/sharedExpenses';
 import AssignToGoalModal from './AssignToGoalModal.vue';
@@ -70,6 +111,8 @@ const emit = defineEmits(['updated']);
 
 const showAssignModal = ref(false);
 const selectedExpense = ref(null);
+const showDismissConfirm = ref(false);
+const pendingDismissExpense = ref(null);
 
 const currencySymbol = (currency) => {
   const map = { EUR: '€', USD: '$', CLP: '$', COP: '$' };
@@ -83,12 +126,21 @@ const openAssign = (expense) => {
   showAssignModal.value = true;
 };
 
-const handleDismiss = async (id) => {
+const openDismissConfirm = (expense) => {
+  pendingDismissExpense.value = expense;
+  showDismissConfirm.value = true;
+};
+
+const confirmDismiss = async () => {
+  showDismissConfirm.value = false;
+  if (!pendingDismissExpense.value) return;
   try {
-    await dismissSharedExpense(id);
+    await dismissSharedExpense(pendingDismissExpense.value.id);
     emit('updated');
   } catch (e) {
     console.error('Error al rechazar gasto compartido:', e);
+  } finally {
+    pendingDismissExpense.value = null;
   }
 };
 
@@ -97,3 +149,35 @@ const onAssigned = () => {
   emit('updated');
 };
 </script>
+
+<style scoped>
+.overlay-enter-active,
+.overlay-leave-active {
+  transition: opacity 0.25s ease;
+}
+.overlay-enter-from,
+.overlay-leave-to {
+  opacity: 0;
+}
+.sheet-enter-active,
+.sheet-leave-active {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.sheet-enter-from,
+.sheet-leave-to {
+  transform: translateY(100%);
+  opacity: 0;
+}
+@media (min-width: 768px) {
+  .sheet-enter-from,
+  .sheet-leave-to {
+    transform: translate(-50%, -50%) scale(0.95);
+    opacity: 0;
+  }
+  .sheet-enter-to,
+  .sheet-leave-from {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+</style>
