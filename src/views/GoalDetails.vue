@@ -132,7 +132,6 @@
       :selectedGoalId="route.params.goalId"
       :goalMainCurrency="goal.mainCurrency"
       @paymentSaved="onPaymentSaved"
-      @shareAvailable="onShareAvailable"
     />
 
     <div
@@ -269,6 +268,23 @@
               type="number"
               class="block w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent text-sm text-gray-900"
             />
+          </div>
+          <!-- Auto-pago toggle (solo Android) -->
+          <div v-if="isNativeApp" class="mt-2 pt-4 border-t border-gray-100">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-900">Pagos automáticos</p>
+                <p class="text-xs text-gray-400 mt-0.5">Registrar compras detectadas en esta tarjeta</p>
+              </div>
+              <button
+                @click="settingsAutoPayment = !settingsAutoPayment"
+                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                :class="settingsAutoPayment ? 'bg-emerald-500' : 'bg-gray-200'">
+                <span
+                  class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                  :class="settingsAutoPayment ? 'translate-x-6' : 'translate-x-1'" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -417,6 +433,14 @@
           :disabled="savingComment"
           class="mt-4 w-full px-4 py-3 text-sm font-medium text-white bg-gray-900 rounded-xl hover:bg-gray-800 disabled:opacity-50 transition active:scale-[0.98]">
           {{ savingComment ? 'Guardando...' : 'Guardar comentario' }}
+        </button>
+
+        <button
+          v-if="selectedPayment.category !== 'Abono a cuenta' && !selectedPayment.sharedInfo && !selectedPayment.sharedFrom"
+          @click="openShareFromDetail"
+          class="mt-3 w-full px-4 py-3 text-sm font-medium text-gray-900 bg-gray-100 rounded-xl hover:bg-gray-200 transition active:scale-[0.98] flex items-center justify-center gap-2">
+          <UserGroupIcon class="h-4 w-4 text-gray-700" />
+          <span>Compartir gasto</span>
         </button>
       </div>
     </Transition>
@@ -588,6 +612,23 @@ const savePaymentComment = async () => {
   } finally {
     savingComment.value = false;
   }
+};
+
+const openShareFromDetail = () => {
+  if (!selectedPayment.value) return;
+
+  sharePaymentData.value = {
+    paymentId: selectedPayment.value.id,
+    goalId: selectedPayment.value.goalId || route.params.goalId,
+    amount: selectedPayment.value.amount,
+    currency: selectedPayment.value.currency || goal.value.mainCurrency,
+    category: selectedPayment.value.category,
+    categoryIcon: selectedPayment.value.categoryIcon,
+  };
+
+  // Cerrar el detalle antes de abrir el panel de compartir para evitar superposición
+  showPaymentDetail.value = false;
+  showSharePanel.value = true;
 };
 
 // Icon helper
@@ -811,12 +852,25 @@ const showSettings = ref(false);
 const settingsTitle = ref('');
 const settingsBillingDay = ref(1);
 const settingsAvailableAmount = ref(0);
+const settingsAutoPayment = ref(false);
 const savingSettings = ref(false);
 
-const openSettings = () => {
+const openSettings = async () => {
   settingsTitle.value = goal.value.title;
   settingsBillingDay.value = goal.value.billingDay || 1;
   settingsAvailableAmount.value = goal.value.availableAmount || 0;
+
+  // Cargar config de auto-pago si es Android
+  if (isNativeApp) {
+    try {
+      const { getAutoPaymentConfig } = await import('@/services/autoPayment');
+      const config = await getAutoPaymentConfig();
+      settingsAutoPayment.value = !!(config?.goalOverrides?.[goal.value.id]?.enabled);
+    } catch {
+      settingsAutoPayment.value = false;
+    }
+  }
+
   showSettings.value = true;
 };
 
@@ -839,6 +893,20 @@ const saveSettings = async () => {
     }
 
     await updateDoc(doc(db, 'goals', goal.value.id), updates);
+
+    // Guardar config de auto-pago si es Android
+    if (isNativeApp) {
+      try {
+        const { getAutoPaymentConfig, saveAutoPaymentConfig } = await import('@/services/autoPayment');
+        const config = await getAutoPaymentConfig() || { enabled: false, monitoredBanks: [], goalOverrides: {} };
+        if (!config.goalOverrides) config.goalOverrides = {};
+        config.goalOverrides[goal.value.id] = { enabled: settingsAutoPayment.value };
+        await saveAutoPaymentConfig(config);
+      } catch (e) {
+        console.error('Error guardando config auto-pago:', e);
+      }
+    }
+
     showSettings.value = false;
     await fetchGoalDetails(goal.value.id);
   } catch (error) {
@@ -894,11 +962,6 @@ const onPaymentSaved = async (amount, currency, categoryInfo) => {
     console.error('Error al actualizar el balance:', error);
     // Aquí podrías implementar una lógica para revertir los cambios en la UI si es necesario
   }
-};
-
-const onShareAvailable = (paymentData) => {
-  sharePaymentData.value = paymentData;
-  showSharePanel.value = true;
 };
 
 const onSharedExpense = async () => {

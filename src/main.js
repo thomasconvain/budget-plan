@@ -125,6 +125,13 @@ onAuthStateChanged(auth, async user => {
     initPushNotifications(webMessaging, (payload) => {
       console.log('Notificación recibida en foreground:', payload)
     })
+
+    // 6) Inicializar detección automática de pagos (solo Android)
+    if (Capacitor.isNativePlatform()) {
+      import('./services/autoPayment').then(({ startAutoPayment }) => {
+        startAutoPayment().catch(e => console.log('AutoPayment no iniciado:', e.message))
+      })
+    }
   } else {
     // Usuario deslogueado: limpia store
     store.commit('clearUser')
@@ -132,6 +139,12 @@ onAuthStateChanged(auth, async user => {
     store.commit('setPendingSharedExpensesCount', 0)
     store.commit('setPendingInvitationsCount', 0)
     store.commit('setUnreadNotificationsCount', 0)
+    // Detener detección automática de pagos
+    if (Capacitor.isNativePlatform()) {
+      import('./services/autoPayment').then(({ stopAutoPayment }) => {
+        stopAutoPayment().catch(() => {})
+      })
+    }
     // Opcional: limpia RevenueCat
     await Purchases.reset()
   }

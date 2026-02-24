@@ -75,6 +75,11 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Configuración de pagos automáticos: el dueño puede leer/escribir su propio doc
+    match /autoPaymentConfig/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
     // Notificaciones: el dueño puede leer y actualizar; cualquier autenticado puede crear
     match /notifications/{notificationId} {
       allow read, update: if request.auth != null

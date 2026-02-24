@@ -86,7 +86,7 @@ const auth = getAuth();
 const db = getFirestore();
 
 // eslint-disable-next-line no-undef
-const emit = defineEmits(['paymentSaved', 'shareAvailable']);
+const emit = defineEmits(['paymentSaved']);
 
 const fetchGoals = async () => {
   const user = auth.currentUser;
@@ -161,17 +161,6 @@ const handleSavePayment = async () => {
       currency: paymentCurrency,
     });
 
-    // Emitir datos para ofrecer compartir (solo si no es un abono)
-    if (!isAbono) {
-      emit('shareAvailable', {
-        paymentId: paymentDoc.id,
-        goalId: props.selectedGoalId,
-        amount: finalAmount,
-        currency: paymentCurrency,
-        category: paymentCategory,
-        categoryIcon: paymentIcon,
-      });
-    }
   } catch (error) {
     console.error('Error al guardar el pago:', error);
   }

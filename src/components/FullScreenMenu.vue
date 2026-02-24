@@ -153,11 +153,13 @@ import {
   PlusCircleIcon,
   UserGroupIcon,
   BellIcon,
+  BoltIcon,
   XMarkIcon,
   ArrowRightOnRectangleIcon,
   TrashIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/vue/24/outline';
+import { Capacitor } from '@capacitor/core';
 import defaultAvatarImg from '@/assets/img/default_profile.webp';
 
 defineProps({ open: Boolean });
@@ -171,12 +173,20 @@ const totalPendingCount = computed(() => store.getters.totalPendingCount || 0);
 const unreadNotificationsCount = computed(() => store.getters.unreadNotificationsCount || 0);
 const defaultAvatar = defaultAvatarImg;
 
-const navItems = computed(() => [
-  { to: '/dashboard', label: 'Inicio', icon: HomeIcon, badge: 0 },
-  { to: '/create-goal', label: 'Agregar', icon: PlusCircleIcon, badge: 0 },
-  { to: '/contacts', label: 'Contactos', icon: UserGroupIcon, badge: totalPendingCount.value },
-  { to: '/notifications', label: 'Notificaciones', icon: BellIcon, badge: unreadNotificationsCount.value },
-]);
+const isNative = Capacitor.isNativePlatform();
+
+const navItems = computed(() => {
+  const items = [
+    { to: '/dashboard', label: 'Inicio', icon: HomeIcon, badge: 0 },
+    { to: '/create-goal', label: 'Agregar', icon: PlusCircleIcon, badge: 0 },
+    { to: '/contacts', label: 'Contactos', icon: UserGroupIcon, badge: totalPendingCount.value },
+    { to: '/notifications', label: 'Notificaciones', icon: BellIcon, badge: unreadNotificationsCount.value },
+  ];
+  if (isNative) {
+    items.push({ to: '/settings/auto-payments', label: 'Pagos automáticos', icon: BoltIcon, badge: 0 });
+  }
+  return items;
+});
 
 const isActive = (path) => {
   if (path === '/dashboard') return route.path === '/dashboard' || route.path.startsWith('/goal/');

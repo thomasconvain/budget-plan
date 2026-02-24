@@ -36,6 +36,16 @@
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@mipmap/bpicon" />
 
+        <!-- NotificationListenerService para detección automática de pagos bancarios -->
+        <service
+            android:name=".plugins.notificationlistener.PaymentNotificationService"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

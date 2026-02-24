@@ -9,6 +9,7 @@ const Contacts = () => import('@/views/Contacts.vue');
 const ContactDetail = () => import('@/views/ContactDetail.vue');
 const Notifications = () => import('@/views/Notifications.vue');
 const PrivacyPolicy = () => import('../views/PrivacyPolicy.vue');
+const AutoPaymentSettings = () => import('@/views/AutoPaymentSettings.vue');
 
 const routes = [
   {
@@ -67,6 +68,14 @@ const routes = [
     path: '/notifications',
     name: 'Notifications',
     component: Notifications,
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/settings/auto-payments',
+    name: 'AutoPaymentSettings',
+    component: AutoPaymentSettings,
     meta: {
       requiresAuth: true
     }
