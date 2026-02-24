@@ -115,14 +115,14 @@
     <div class="my-6 flex justify-center lg:justify-end">
       <button
         class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-gray-500 bg-white rounded-xl border border-gray-100 shadow-sm hover:bg-gray-50 transition"
-        @click="showCharts = !showCharts">
+        @click="toggleCharts">
         <ChartPieIcon class="h-4 w-4" />
         {{ showCharts ? 'Ocultar' : 'Ver' }} repartición
       </button>
     </div>
 
-    <div v-if="showCharts" class="w-full h-96 bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-      <v-chart :option="chartOptions" />
+    <div v-if="showCharts && VChartComponent" class="w-full h-96 bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+      <component :is="VChartComponent" :option="chartOptions" />
     </div>
 
     <!-- Payments list -->
@@ -424,7 +424,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, provide, nextTick } from 'vue';
+import { ref, onMounted, computed, provide, nextTick, shallowRef } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Timestamp, getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -436,15 +436,6 @@ import { formatNumber } from '../utils/currencyFormatters';
 import { convertToMainCurrency } from '../utils/currencyConverter';
 import { calculateBillingPeriod } from '../utils/billingPeriod';
 import { getSharedRecipientNamesByPaymentIds, getSharedCreatorNamesByPaymentIds, markSharedExpenseCancelledWhenRecipientDeletes, cancelSharedExpenseByCreator, cleanupCancelledSharedExpensesAsRecipient, cleanupCancelledSharedExpensesAsCreator, processBalanceAdjustments, saveSharedExpenseComment } from '../utils/business/sharedExpenses';
-import {
-  TitleComponent,
-  TooltipComponent,
-  LegendComponent,
-} from 'echarts/components';
-import { use } from 'echarts/core';
-import { PieChart } from 'echarts/charts';
-import { CanvasRenderer } from 'echarts/renderers';
-import VChart, { THEME_KEY } from 'vue-echarts';
 import {
   PencilIcon,
   XMarkIcon,
@@ -464,16 +455,24 @@ import { Capacitor } from '@capacitor/core';
 import { deriveKey, decrypt, encrypt } from '@/services/encryption';
 import { defineEmits } from 'vue';
 
-// ECharts necesita importar las capacidades de los gráficos y renderizado
-use([
-  PieChart,
-  CanvasRenderer,
-  TitleComponent,
-  TooltipComponent,
-  LegendComponent,
-]);
+// ECharts: carga dinámica solo cuando el usuario activa los gráficos
+const VChartComponent = shallowRef(null);
+let echartsRegistered = false;
 
-provide(THEME_KEY, 'light');
+async function loadECharts() {
+  if (echartsRegistered) return;
+  const [{ use }, { PieChart }, { CanvasRenderer }, { TitleComponent, TooltipComponent, LegendComponent }, vchartModule] = await Promise.all([
+    import('echarts/core'),
+    import('echarts/charts'),
+    import('echarts/renderers'),
+    import('echarts/components'),
+    import('vue-echarts'),
+  ]);
+  use([PieChart, CanvasRenderer, TitleComponent, TooltipComponent, LegendComponent]);
+  VChartComponent.value = vchartModule.default;
+  provide(vchartModule.THEME_KEY, 'light');
+  echartsRegistered = true;
+}
 
 const db = getFirestore();
 const auth = getAuth();
@@ -488,6 +487,15 @@ const payments = ref([]);
 const isLoading = ref(true);
 const daysRemaining = ref(0);
 const showCharts = ref(false);
+const chartsReady = ref(false);
+
+async function toggleCharts() {
+  showCharts.value = !showCharts.value;
+  if (showCharts.value && !chartsReady.value) {
+    await loadECharts();
+    chartsReady.value = true;
+  }
+}
 const balanceReadyToEdit = ref(false);
 const balanceToUpdate = ref(0);
 const lastCardRef = ref(null);

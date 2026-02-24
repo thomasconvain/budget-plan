@@ -158,7 +158,7 @@ import {
   TrashIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/vue/24/outline';
-import defaultAvatarImg from '@/assets/img/default_profile.jpg';
+import defaultAvatarImg from '@/assets/img/default_profile.webp';
 
 defineProps({ open: Boolean });
 const emit = defineEmits(['close']);

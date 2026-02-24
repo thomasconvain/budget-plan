@@ -1,13 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from '../views/Home.vue';
-import PrivacyPolicy from '../views/PrivacyPolicy.vue';
 import { useStore } from 'vuex';
-import GoalDetails from '../views/GoalDetails.vue';
-import Dashboard from '@/views/Dashboard.vue';
-import CreateGoal from '@/views/CreateGoal.vue';
-import Contacts from '@/views/Contacts.vue';
-import Notifications from '@/views/Notifications.vue';
-import ContactDetail from '@/views/ContactDetail.vue';
+
+const Dashboard = () => import('@/views/Dashboard.vue');
+const CreateGoal = () => import('@/views/CreateGoal.vue');
+const GoalDetails = () => import('../views/GoalDetails.vue');
+const Contacts = () => import('@/views/Contacts.vue');
+const ContactDetail = () => import('@/views/ContactDetail.vue');
+const Notifications = () => import('@/views/Notifications.vue');
+const PrivacyPolicy = () => import('../views/PrivacyPolicy.vue');
 
 const routes = [
   {

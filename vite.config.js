@@ -12,4 +12,14 @@ export default defineConfig({
   define: {
     __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false),
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/functions'],
+          echarts: ['echarts/core', 'echarts/charts', 'echarts/renderers', 'echarts/components'],
+        },
+      },
+    },
+  },
 })

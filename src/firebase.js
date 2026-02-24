@@ -3,7 +3,7 @@
 import { initializeApp } from "firebase/app";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { getFunctions } from "firebase/functions";
 import { getMessaging, isSupported } from "firebase/messaging";
 // import { getAnalytics } from "firebase/analytics";
@@ -33,7 +33,9 @@ const appCheck = initializeAppCheck(app, {
 
 // Inicializa los servicios que necesites
 const auth = getAuth(app);
-const db = getFirestore(app);
+const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+});
 const functions = getFunctions(app);
 
 // Messaging: promesa que resuelve a la instancia o null según soporte

@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(wc -l /c/Users/Thomas/Documents/personal/GIT/budget-plan/src/views/*.vue)",
+      "Bash(xargs wc -l)",
+      "Bash(wc -l /c/Users/Thomas/Documents/personal/GIT/budget-plan/src/components/**/*.vue)",
+      "Bash(grep -r \"v-if\\\\|@click\\\\|emit\" /c/Users/Thomas/Documents/personal/GIT/budget-plan/src/components/*.vue)"
     ]
   }
 }
