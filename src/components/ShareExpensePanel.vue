@@ -59,23 +59,36 @@
       </div>
       <p v-else class="text-sm text-gray-400 mb-4">No tienes contactos aún. Invita a alguien desde la sección de Contactos.</p>
 
-      <!-- Porcentaje -->
+      <!-- Monto a asignar -->
       <div v-if="selectedContact" class="mb-4">
-        <label class="block text-xs font-medium text-gray-400 mb-2">Porcentaje a compartir</label>
-        <div class="flex gap-2">
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-xs font-medium text-gray-400">Monto que paga {{ selectedContact.name }}</label>
           <button
-            v-for="pct in percentageOptions"
-            :key="pct"
-            :class="[
-              'flex-1 py-2 text-sm font-medium rounded-xl border transition',
-              splitPercentage === pct
-                ? 'border-gray-900 bg-gray-900 text-white'
-                : 'border-gray-200 text-gray-600 hover:border-gray-300'
-            ]"
-            @click="splitPercentage = pct">
-            {{ pct }}%
+            class="text-xs font-medium px-2.5 py-1 rounded-lg border transition"
+            :class="isHalf ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 text-gray-600 hover:border-gray-300'"
+            @click="setHalf">
+            50 / 50
           </button>
         </div>
+
+        <div class="relative flex items-center">
+          <span class="absolute left-3 text-sm text-gray-400 pointer-events-none select-none">{{ currencySymbol(payment.currency) }}</span>
+          <input
+            type="number"
+            v-model="customAmountInput"
+            :min="0"
+            :max="totalAmount"
+            :step="payment.currency === 'CLP' || payment.currency === 'COP' ? 1 : 0.01"
+            class="w-full pl-7 pr-16 py-2.5 text-sm border rounded-xl transition focus:outline-none"
+            :class="isOverTotal ? 'border-red-400 focus:border-red-500' : 'border-gray-200 focus:border-gray-900'"
+            placeholder="0"
+          />
+          <span class="absolute right-3 text-xs font-semibold pointer-events-none select-none"
+            :class="isOverTotal ? 'text-red-400' : 'text-gray-400'">
+            {{ displayPercentage }}%
+          </span>
+        </div>
+        <p v-if="isOverTotal" class="mt-1 text-xs text-red-400">El monto no puede superar el gasto original.</p>
 
         <!-- Preview -->
         <div class="mt-3 bg-gray-50 rounded-xl p-3">
@@ -88,7 +101,7 @@
           <div class="flex justify-between text-sm mt-1">
             <span class="text-gray-500">Tú pagas</span>
             <span class="font-semibold text-gray-900">
-              {{ currencySymbol(payment.currency) }} {{ formatNumber(Math.abs(payment.amount) - sharedAmount, payment.currency) }}
+              {{ currencySymbol(payment.currency) }} {{ formatNumber(totalAmount - sharedAmount, payment.currency) }}
             </span>
           </div>
         </div>
@@ -97,7 +110,7 @@
       <!-- Botón confirmar -->
       <button
         v-if="selectedContact"
-        :disabled="sharing"
+        :disabled="sharing || isOverTotal || parsedAmount <= 0"
         class="mt-2 w-full px-4 py-3 text-sm font-medium text-white bg-gray-900 rounded-xl hover:bg-gray-800 disabled:opacity-50 transition active:scale-[0.98]"
         @click="handleShare">
         {{ sharing ? 'Compartiendo...' : 'Compartir' }}
@@ -107,7 +120,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { XMarkIcon, UserIcon, CheckCircleIcon } from '@heroicons/vue/24/outline';
 import { fetchContacts } from '@/utils/business/invitations';
 import { createSharedExpense } from '@/utils/business/sharedExpenses';
@@ -125,27 +138,65 @@ const emit = defineEmits(['close', 'shared']);
 
 const contacts = ref([]);
 const selectedContact = ref(null);
-const splitPercentage = ref(50);
+const customAmountInput = ref('');
 const sharing = ref(false);
-const percentageOptions = [50, 60, 70, 80];
 
 const currencySymbol = (currency) => {
   const map = { EUR: '€', USD: '$', CLP: '$', COP: '$' };
   return map[currency] || currency;
 };
 
+const totalAmount = computed(() => Math.abs(props.payment.amount));
+
+const setHalf = () => {
+  const half = totalAmount.value / 2;
+  customAmountInput.value = String(
+    props.payment.currency === 'CLP' || props.payment.currency === 'COP'
+      ? Math.round(half)
+      : Math.round(half * 100) / 100
+  );
+};
+
+const parsedAmount = computed(() => {
+  const val = parseFloat(customAmountInput.value);
+  return isNaN(val) ? 0 : val;
+});
+
+const isOverTotal = computed(() => parsedAmount.value > totalAmount.value);
+
 const sharedAmount = computed(() =>
-  Math.abs(props.payment.amount) * (splitPercentage.value / 100)
+  Math.max(0, Math.min(parsedAmount.value, totalAmount.value))
 );
+
+const splitPercentage = computed(() => {
+  if (totalAmount.value === 0) return 0;
+  return (sharedAmount.value / totalAmount.value) * 100;
+});
+
+const displayPercentage = computed(() => {
+  const pct = splitPercentage.value;
+  const rounded = Math.round(pct * 10) / 10;
+  return Number.isInteger(rounded) ? rounded : rounded.toFixed(1);
+});
+
+const isHalf = computed(() => Math.abs(splitPercentage.value - 50) < 0.01);
+
+watch(() => props.visible, (val) => {
+  if (val) setHalf();
+});
+
+watch(selectedContact, (contact) => {
+  if (contact) setHalf();
+});
 
 const close = () => {
   selectedContact.value = null;
-  splitPercentage.value = 50;
+  customAmountInput.value = '';
   emit('close');
 };
 
 const handleShare = async () => {
-  if (!selectedContact.value || sharing.value) return;
+  if (!selectedContact.value || sharing.value || isOverTotal.value || parsedAmount.value <= 0) return;
 
   sharing.value = true;
   try {
