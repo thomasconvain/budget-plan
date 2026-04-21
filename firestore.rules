@@ -38,7 +38,8 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.resource.data.fromUserId == request.auth.uid;
       allow update: if request.auth != null
-        && resource.data.toUserId == request.auth.uid;
+        && (resource.data.toUserId == request.auth.uid
+            || (resource.data.fromUserId == request.auth.uid && resource.data.status == 'accepted'));
       allow delete: if request.auth != null
         && resource.data.fromUserId == request.auth.uid
         && resource.data.status == 'pending';
@@ -63,7 +64,10 @@ service cloud.firestore {
       allow create: if false; // Solo Cloud Functions crea
     }
 
-    // Liquidaciones: ambas partes pueden leer; cualquiera de las dos puede crear
+    // Liquidaciones: ambas partes pueden leer; cualquiera de las dos puede crear.
+    // Update permitido a las partes para soportar el backfill de `allocations`
+    // (campo añadido al modelo). Si en el futuro se desea hacer write-once,
+    // restringir a delta solo sobre `allocations`.
     match /settlements/{settlementId} {
       allow read: if request.auth != null
         && (resource.data.fromUserId == request.auth.uid
@@ -72,7 +76,10 @@ service cloud.firestore {
         && (request.resource.data.fromUserId == request.auth.uid
             || request.resource.data.toUserId == request.auth.uid)
         && request.resource.data.createdByUserId == request.auth.uid;
-      allow update, delete: if false;
+      allow update: if request.auth != null
+        && (resource.data.fromUserId == request.auth.uid
+            || resource.data.toUserId == request.auth.uid);
+      allow delete: if false;
     }
 
     // Configuración de pagos automáticos: el dueño puede leer/escribir su propio doc

@@ -10,6 +10,7 @@ const ContactDetail = () => import('@/views/ContactDetail.vue');
 const Notifications = () => import('@/views/Notifications.vue');
 const PrivacyPolicy = () => import('../views/PrivacyPolicy.vue');
 const AutoPaymentSettings = () => import('@/views/AutoPaymentSettings.vue');
+const MigrationPanel = () => import('@/views/MigrationPanel.vue');
 
 const routes = [
   {
@@ -76,6 +77,14 @@ const routes = [
     path: '/settings/auto-payments',
     name: 'AutoPaymentSettings',
     component: AutoPaymentSettings,
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/admin/migrate-settlements',
+    name: 'MigrationPanel',
+    component: MigrationPanel,
     meta: {
       requiresAuth: true
     }

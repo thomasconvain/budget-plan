@@ -48,23 +48,9 @@
     </div>
 
     <!-- Filtro de fechas -->
-    <div class="flex gap-3 mb-4">
-      <div class="flex-1">
-        <label class="block text-xs font-medium text-white/60 mb-1">Desde</label>
-        <input
-          type="date"
-          v-model="dateFrom"
-          class="w-full px-3 py-2 text-sm bg-white/10 text-white border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-white/20"
-        />
-      </div>
-      <div class="flex-1">
-        <label class="block text-xs font-medium text-white/60 mb-1">Hasta</label>
-        <input
-          type="date"
-          v-model="dateTo"
-          class="w-full px-3 py-2 text-sm bg-white/10 text-white border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-white/20"
-        />
-      </div>
+    <div class="mb-4">
+      <label class="block text-xs font-medium text-white/60 mb-1">Período</label>
+      <DateRangePicker v-model="dateRange" />
     </div>
 
     <!-- Balance en el período -->
@@ -122,8 +108,8 @@
             <p class="text-sm font-semibold" :class="itemAmountColor(item)">
               {{ itemAmountPrefix(item) }}{{ currencySymbol(item.currency) }} {{ formatNumber(item.amount, item.currency) }}
             </p>
-            <p v-if="item._type === 'expense'" class="text-[10px] text-gray-400">
-              {{ item.status === 'cancelled' ? 'Cancelado' : item.status === 'pending' ? 'Pendiente' : 'Asignado' }}
+            <p v-if="item._type === 'expense'" class="text-[10px]" :class="expenseStatusColor(item)">
+              {{ expenseStatusLabel(item) }}
             </p>
           </div>
         </div>
@@ -240,6 +226,7 @@ import {
 } from '@heroicons/vue/24/outline';
 import * as OutlineIcons from '@heroicons/vue/24/outline';
 import ContactDetailSkeleton from '@/components/skeletons/ContactDetailSkeleton.vue';
+import DateRangePicker from '@/components/DateRangePicker.vue';
 import { fetchContactById } from '@/utils/business/invitations';
 import { fetchSharedExpensesWith } from '@/utils/business/sharedExpenses';
 import { fetchSettlementsWith, createSettlement } from '@/utils/business/settlements';
@@ -265,19 +252,32 @@ const allExpenses = ref([]);
 const allSettlements = ref([]);
 let currentUserId = null;
 
-// Date filter — default: 1st of current month to today
+// Date filter
 const toInputDate = (d) => {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
 };
-const firstOfMonth = () => {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), 1);
+// Default temporal hasta que se carguen los gastos: hoy-hoy.
+const todayStr = toInputDate(new Date());
+const dateRange = ref({ from: todayStr, to: todayStr });
+
+// Recalcula el rango por defecto cuando se cargan los gastos: desde el gasto
+// pendiente más antiguo hasta hoy. Si no hay pendientes, hoy-hoy.
+const computeDefaultRange = () => {
+  const today = new Date();
+  const todayInput = toInputDate(today);
+  const pendingDates = allExpenses.value
+    .filter(e => e.status !== 'cancelled')
+    .filter(e => Number(e.amount) - Number(e.settledAmount || 0) > 0)
+    .map(e => (e.createdAt?.toDate ? e.createdAt.toDate() : new Date(e.createdAt)));
+  if (!pendingDates.length) {
+    return { from: todayInput, to: todayInput };
+  }
+  const oldest = pendingDates.reduce((min, d) => (d < min ? d : min), pendingDates[0]);
+  return { from: toInputDate(oldest), to: todayInput };
 };
-const dateFrom = ref(toInputDate(firstOfMonth()));
-const dateTo = ref(toInputDate(new Date()));
 
 // Settlement form
 const showSettlementSheet = ref(false);
@@ -342,28 +342,21 @@ const currencySymbol = (currency) => {
 
 const getIconComponent = (name) => OutlineIcons[name] || null;
 
-// Balance computation
-const computeBalanceByCurrency = (expenses, settlements) => {
+// Balance computation — basado solo en gastos no saldados.
+// Cada gasto aporta (amount - settledAmount). Las liquidaciones no entran al
+// cálculo: su efecto vive en settledAmount de los gastos que pagaron.
+const computeBalanceByCurrency = (expenses) => {
   const map = {};
   for (const e of expenses) {
     if (e.status === 'cancelled') continue;
+    const pending = Number(e.amount) - Number(e.settledAmount || 0);
+    if (pending === 0) continue;
     const cur = e.currency;
     if (!map[cur]) map[cur] = 0;
     if (e.createdByUserId === currentUserId) {
-      map[cur] += Number(e.amount);
+      map[cur] += pending;
     } else {
-      map[cur] -= Number(e.amount);
-    }
-  }
-  for (const s of settlements) {
-    const cur = s.currency;
-    if (!map[cur]) map[cur] = 0;
-    if (s.fromUserId === currentUserId) {
-      // Yo pagué → reduce lo que debo (balance sube hacia 0)
-      map[cur] += Number(s.amount);
-    } else {
-      // Contacto pagó → reduce lo que me debe (balance baja hacia 0)
-      map[cur] -= Number(s.amount);
+      map[cur] -= pending;
     }
   }
   return map;
@@ -371,7 +364,7 @@ const computeBalanceByCurrency = (expenses, settlements) => {
 
 // All-time balance
 const allTimeBalanceByCurrency = computed(() => {
-  return computeBalanceByCurrency(allExpenses.value, allSettlements.value);
+  return computeBalanceByCurrency(allExpenses.value);
 });
 
 const allTimeCurrencies = computed(() => {
@@ -394,8 +387,8 @@ const parseDateInput = (str) => {
 };
 
 const filterByDateRange = (items) => {
-  const f = parseDateInput(dateFrom.value);
-  const t = parseDateInput(dateTo.value);
+  const f = parseDateInput(dateRange.value.from);
+  const t = parseDateInput(dateRange.value.to);
   const from = new Date(f.y, f.m - 1, f.d, 0, 0, 0, 0);
   const to = new Date(t.y, t.m - 1, t.d, 23, 59, 59, 999);
   return items.filter((item) => {
@@ -407,29 +400,7 @@ const filterByDateRange = (items) => {
 const filteredExpenses = computed(() => filterByDateRange(allExpenses.value));
 const filteredSettlements = computed(() => filterByDateRange(allSettlements.value));
 
-const filteredBalanceByCurrency = computed(() => {
-  const map = {};
-  for (const e of filteredExpenses.value) {
-    if (e.status === 'cancelled') continue;
-    const cur = e.currency;
-    if (!map[cur]) map[cur] = 0;
-    if (e.createdByUserId === currentUserId) {
-      map[cur] += Number(e.amount);
-    } else {
-      map[cur] -= Number(e.amount);
-    }
-  }
-  for (const s of filteredSettlements.value) {
-    const cur = s.currency;
-    if (!map[cur]) map[cur] = 0;
-    if (s.fromUserId === currentUserId) {
-      map[cur] += Number(s.amount);
-    } else {
-      map[cur] -= Number(s.amount);
-    }
-  }
-  return map;
-});
+const filteredBalanceByCurrency = computed(() => computeBalanceByCurrency(filteredExpenses.value));
 
 const filteredCurrencies = computed(() => {
   return Object.keys(filteredBalanceByCurrency.value).filter(
@@ -527,6 +498,27 @@ const itemAmountColor = (item) => {
   return 'text-red-500';
 };
 
+const expenseStatusLabel = (item) => {
+  if (item.status === 'cancelled') return 'Cancelado';
+  if (item.status === 'pending') return 'Pendiente';
+  const total = Number(item.amount);
+  const settled = Number(item.settledAmount || 0);
+  if (settled >= total) return 'Saldado';
+  if (settled > 0) {
+    return `Saldado parcial ${currencySymbol(item.currency)} ${formatNumber(settled, item.currency)} de ${currencySymbol(item.currency)} ${formatNumber(total, item.currency)}`;
+  }
+  return 'Asignado';
+};
+
+const expenseStatusColor = (item) => {
+  if (item.status === 'cancelled') return 'text-gray-400';
+  const total = Number(item.amount);
+  const settled = Number(item.settledAmount || 0);
+  if (settled >= total) return 'text-blue-500';
+  if (settled > 0) return 'text-blue-400';
+  return 'text-gray-400';
+};
+
 const itemAmountPrefix = (item) => {
   if (item._type === 'settlement') {
     return item.fromUserId === currentUserId ? '-' : '+';
@@ -556,8 +548,11 @@ const handleCreateSettlement = async () => {
       note: settlementNote.value,
       direction: settlementDirection.value,
     });
-    // Refresh settlements
-    allSettlements.value = await fetchSettlementsWith(props.contactId);
+    // Refresh settlements y gastos (settledAmount cambió por la asignación FIFO)
+    [allExpenses.value, allSettlements.value] = await Promise.all([
+      fetchSharedExpensesWith(props.contactId),
+      fetchSettlementsWith(props.contactId),
+    ]);
     showSettlementSheet.value = false;
     settlementAmount.value = null;
     settlementNote.value = '';
@@ -598,6 +593,7 @@ onMounted(() => {
       contact.value = contactData;
       allExpenses.value = expenses;
       allSettlements.value = settlements;
+      dateRange.value = computeDefaultRange();
       isLoading.value = false;
       emitBackgroundHeight();
     }
