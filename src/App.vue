@@ -27,6 +27,7 @@
       </div>
     </div>
     <PendingPaymentBanner v-if="isNativeApp && user" />
+    <AppUpdateBanner v-if="isNativeApp" />
     <MobileMenu v-if="user"/>
     <FooterSection v-if="!isNativeApp" class="bottom-0 hidden md:block"/>
   </div>
@@ -41,6 +42,7 @@ import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import MobileMenu from './components/MobileMenu.vue';
 import PendingPaymentBanner from './components/PendingPaymentBanner.vue';
+import AppUpdateBanner from './components/AppUpdateBanner.vue';
 
 const isNativeApp = Capacitor.isNativePlatform();
 const store = useStore();

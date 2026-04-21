@@ -30,6 +30,12 @@ service cloud.firestore {
       allow read: if request.auth != null;
     }
 
+    // Config de la app (versiones mínimas/últimas, flags, etc.):
+    // lectura pública para que el aviso de actualización funcione incluso sin login
+    match /config/{configId} {
+      allow read: if true;
+    }
+
     // Invitaciones: ambas partes pueden leer; remitente crea; destinatario actualiza status
     match /invitations/{invitationId} {
       allow read: if request.auth != null
